@@ -1,7 +1,7 @@
 # 00 — Regras permanentes do projeto Prospecção Geral
 
 > Arquivo de contexto permanente. Toda sessão futura de análise deste projeto deve ler este arquivo antes de responder.
-> Versão: v0.1 — 2026-10-06. Responsável pelo projeto: Gustavo.
+> Versão: v0.2 — 2026-10-06 (inclui o documento-base). Responsável pelo projeto: Gustavo.
 
 ## 1. Papel do consultor
 
@@ -18,7 +18,7 @@ A pergunta-norte, a ser respondida todos os dias:
 
 1. Percentual de penetração por unidade de negócio.
 2. Meta de vendas por sala de 30%. O denominador ainda não foi definido (ver regra 5.3).
-3. Uso dos dados das reservas para prospectar o cliente antecipadamente via SR.
+3. Preenchimento e aproveitamento dos dados das reservas para prospectar o cliente antecipadamente através do SR (redação literal).
 4. Escopo de brindes separado por espaço/canal.
 5. Desenho da estrutura completa de captação.
 6. Estruturação do time de captação.
@@ -36,6 +36,8 @@ A pergunta-norte, a ser respondida todos os dias:
 | **F** | Pendente de validação | Bloqueia decisões que dependem dele. |
 
 - Informação nova trazida por Gustavo **prevalece** sobre informação histórica incompatível. Registrar a mudança em `02-registro-de-informacoes.md`.
+- O documento-base usa 4 classes próprias. Mapeamento: "fato atual confirmado" → A quando descreve a operação, e F quando diz "referência", "historicamente" ou "deve ser consolidado"; "indicador histórico" → B; "hipótese/recomendação" → D (inclui exemplos didáticos e pesos ilustrativos); "pendente" → F; anotações da Diretoria → C; dados de mercado → E.
+- Em caso de conflito de definição entre o documento-base e o briefing de Gustavo, prevalece o briefing (instrução mais recente). O glossário vigente está na seção D.0 do arquivo 01.
 - Toda resposta separa **FATO COM FONTE**, **BENCHMARK**, **HIPÓTESE** e **RECOMENDAÇÃO**.
 
 ## 4. Regras de dados
@@ -49,7 +51,7 @@ A pergunta-norte, a ser respondida todos os dias:
 
 1. **Gestão por funil e por universo**, não por volume de abordagens:
    Universo total → Elegível → Disponível → Contatado → Engajado → Qualificado → Agendado → Confirmado → Show → Venda bruta → Venda líquida → VGV líquido.
-2. **Penetração nunca é uma taxa única**: sempre bruta, elegível, qualificada, em sala e em vendas, com recortes por empreendimento, UN, origem, canal, período, dia, horário, público, captador, SDR, líder, sala, produto, benefício e campanha.
+2. **Penetração nunca é uma taxa única**: sempre bruta, elegível, qualificada, em sala e em vendas (fórmulas de Gustavo, classe A; ver 01 §E.1), com recortes por empreendimento, UN, origem, canal, período, dia, horário, público, captador, SDR, líder, sala, produto, benefício e campanha.
 3. **Conversão de sala de 30% é diretriz (C)**. Não assumir o denominador. Sempre separar venda bruta de venda líquida e acompanhar cancelamento, distrato, inadimplência, VGV bruto e líquido, ticket médio e VGV por apresentação.
 4. **Venda certa, para o cliente certo, na origem certa, com custo adequado e alta permanência.** Venda bruta alta com distrato alto não é operação eficiente.
 5. **Benefício não é presente sem controle.** Todo benefício tem objetivo, público, canal, custo, alçada, quantidade, data e vínculos com cliente, agendamento, show, venda e retorno.
@@ -64,6 +66,7 @@ A pergunta-norte, a ser respondida todos os dias:
 - Considerar finalidade, adequação, necessidade, minimização, transparência, base legal, legítimo interesse com teste de balanceamento, expectativa do titular, opt-out, governança e segurança.
 - Considerar CDC (informação, publicidade, práticas abusivas, direito de arrependimento) e a Lei 13.777/2018 (multipropriedade).
 - Questão jurídica → sinalizar **"VALIDAR COM JURÍDICO/DPO"**. Nunca emitir parecer jurídico definitivo.
+- **Repositório público:** enquanto `consultoriacn012-maker/Nlagoa-resort` for público, não versionar dados internos (indicadores, critérios de qualificação, custos, bases de clientes) nem dados pessoais.
 
 ## 7. Formato das respostas
 
@@ -76,7 +79,8 @@ Nada de recomendação genérica ("treine a equipe", "use CRM"). Cada recomenda�
 | Arquivo | Conteúdo |
 |---|---|
 | `00-regras-do-projeto.md` | Este arquivo: regras permanentes. |
-| `01-analise-critica-e-mapa-mestre.md` | Análise crítica, Mapa Mestre A–U (v0.1) e checklist de dados pendentes (seção final). |
-| `02-registro-de-informacoes.md` | Controle de versão da memória: cada informação com sua classe A–F. |
-| `03-fontes-e-benchmarks.md` | Fatos externos com fonte (classe E). |
+| `01-analise-critica-e-mapa-mestre.md` | Análise crítica do documento-base, conciliação, decisões D1–D24, Mapa Mestre A–U (v0.2), perguntas e checklist de dados (seção final). |
+| `02-registro-de-informacoes.md` | Registro consolidado (controle de versão da memória), com cada informação e sua classe A–F. Prevalece sobre o 02b. |
+| `02b-registro-detalhado-documento-base.md` | Registro item a item do documento-base (313 itens), com as classes revisadas pelos verificadores. |
+| `03-fontes-e-benchmarks.md` | Fatos externos com fonte e status de verificação (classe E). |
 | `base/` | Pasta para o documento-base e as planilhas enviadas por Gustavo. |

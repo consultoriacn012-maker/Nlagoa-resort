@@ -26,8 +26,8 @@ Fontes: [DB Mercado-1, Caio Calfat](https://www.caiocalfat.com/blog/multiproprie
 
 - **Correção da v0.1:** a v0.1 dizia que os números de 2025 e 2026 "não batem". Batem: R$ 92,7 bi e R$ 100,5 bi são **VGV potencial**; R$ 53,3 bi e R$ 66,3 bi são **VGV vendido**. Conferência: 1 − 53,3/92,7 = 42,5% e 1 − 66,3/100,5 = 34,0%, exatamente os estoques reportados.
 - **Cautela:** o VGV vendido parece ser **acumulado** sobre o estoque mapeado, não venda anual. Nunca apresentar R$ 66,3 bi como "vendas do setor em 2026". A diferença de ~R$ 13 bi entre as edições mistura vendas novas, reajuste de tabela e entrada/saída de empreendimentos (hipótese a confirmar no relatório).
-- **Nordeste:** 65 empreendimentos e VGV potencial de **R$ 30,38 bi** ([Movimento Econômico, 06/05/2026](https://movimentoeconomico.com.br/estados/alagoas/2026/05/06/multipropriedade-movimenta-r-3038-bilhoes-e-avanca-no-nordeste/)). A v0.1 arredondou para R$ 30,3 bi.
-- **Links do documento-base a conferir:** o endereço da Mercado-1 não aparece em nenhum índice; o post indexado da Caio Calfat é `caiocalfat.com/blog/multipropriedade-milhao-fracoes`.
+- **Nordeste:** 65 empreendimentos e VGV potencial de **R$ 30,38 bi** ([Movimento Econômico, 06/05/2026](https://movimentoeconomico.com.br/estados/alagoas/2026/05/06/multipropriedade-movimenta-r-3038-bilhoes-e-avanca-no-nordeste/)). A v0.1 truncou para R$ 30,3 bi (arredondado, seria R$ 30,4 bi).
+- **Links do documento-base a conferir:** o endereço da Mercado-1 não aparece em nenhum índice (o post indexado da Caio Calfat é `caiocalfat.com/blog/multipropriedade-milhao-fracoes`); a Benchmark-2 está indexada em `gramadoparks.com.br/como-a-gramado-parks-...`, não em `gramadoparks.com/pt-br/blog/...`; a Benchmark-1 está indexada com o prefixo `/blog/` em adit.com.br. Conferir os três antes de citar à Diretoria.
 - **Derivados (E derivado, ordem de grandeza):** 28,7 frações por UH (≈ 12,7 dias de uso por fração); VGV potencial médio de ~R$ 79,4 mil por fração. São médias nacionais que misturam produtos muito diferentes e **não descrevem nenhum produto da Lagoa**.
 - Gramado, Olímpia e Caldas Novas aparecem entre os principais polos. Não usar a afirmação, vista em um resumo de busca, de que Caldas Novas concentra "mais da metade" dos empreendimentos: ela não fecha com 224 empreendimentos em 99 cidades.
 
@@ -100,7 +100,7 @@ Data do estudo não confirmada (as reportagens sugerem 2025).
 | Informação | Fonte | Confiança |
 |---|---|---|
 | Lagoa Eco Towers: 480 apartamentos, operação Livá Hotéis, 6 mil cotas por fase, VGV > R$ 500 mi, "segundo empreendimento do grupo" | [Mercado & Eventos](https://www.mercadoeeventos.com.br/?p=367517) | Média (data a confirmar) |
-| Lagoa Quente Flat Hotel em frente ao Lagoa Termas Parque | [Dicas de Viagem](https://www.dicasdeviagem.com/resorts-em-caldas-novas/) | Baixa |
+| Lagoa Quente Flat Hotel em frente ao Lagoa Termas Parque, citado com área de ~400 mil m² | [Dicas de Viagem](https://www.dicasdeviagem.com/resorts-em-caldas-novas/) (resumo de busca) | Baixa |
 | Reportagem sobre o ADIT Share 2025 atribui à **Verta**, "com Grupo Lagoa e Village Itaparica", 65% das vendas vindas de salas físicas e cita a estruturação de canais digital e mini vacation | Turismo Compartilhado (resumo de busca) | Baixa. **F: confirmar com Gustavo se é o mesmo grupo. Nunca usar como dado interno** |
 
 ## 6. Pesquisa ainda a fazer

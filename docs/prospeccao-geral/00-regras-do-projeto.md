@@ -17,7 +17,7 @@ A pergunta-norte, a ser respondida todos os dias:
 ## 2. Os sete pilares da Diretoria (classe C, não reabrir sem nova orientação)
 
 1. Percentual de penetração por unidade de negócio.
-2. Meta de vendas por sala de 30%. O denominador ainda não foi definido (ver regra 5.3).
+2. Meta de vendas por sala de 30%. Numerador (bruto/líquido), denominador e janela ainda não foram definidos (D1; ver regra 5.3).
 3. Preenchimento e aproveitamento dos dados das reservas para prospectar o cliente antecipadamente através do SR (redação literal).
 4. Escopo de brindes separado por espaço/canal.
 5. Desenho da estrutura completa de captação.
@@ -36,7 +36,7 @@ A pergunta-norte, a ser respondida todos os dias:
 | **F** | Pendente de validação | Bloqueia decisões que dependem dele. |
 
 - Informação nova trazida por Gustavo **prevalece** sobre informação histórica incompatível. Registrar a mudança em `02-registro-de-informacoes.md`.
-- O documento-base usa 4 classes próprias. Mapeamento: "fato atual confirmado" → A quando descreve a operação, e F quando diz "referência", "historicamente" ou "deve ser consolidado"; "indicador histórico" → B; "hipótese/recomendação" → D (inclui exemplos didáticos e pesos ilustrativos); "pendente" → F; anotações da Diretoria → C; dados de mercado → E.
+- O documento-base usa 4 classes próprias. Mapeamento: "fato atual confirmado" → A quando descreve a operação; B quando diz "historicamente"; F quando diz "referência", "deve ser consolidado" ou "conforme política vigente" sem anexar a política; "indicador histórico" → B; "hipótese/recomendação" → D (inclui exemplos didáticos e pesos ilustrativos); "pendente" → F; anotações da Diretoria → C; dados de mercado → E.
 - Em caso de conflito de definição entre o documento-base e o briefing de Gustavo, prevalece o briefing (instrução mais recente). O glossário vigente está na seção D.0 do arquivo 01.
 - Toda resposta separa **FATO COM FONTE**, **BENCHMARK**, **HIPÓTESE** e **RECOMENDAÇÃO**.
 
@@ -52,7 +52,7 @@ A pergunta-norte, a ser respondida todos os dias:
 1. **Gestão por funil e por universo**, não por volume de abordagens:
    Universo total → Elegível → Disponível → Contatado → Engajado → Qualificado → Agendado → Confirmado → Show → Venda bruta → Venda líquida → VGV líquido.
 2. **Penetração nunca é uma taxa única**: sempre bruta, elegível, qualificada, em sala e em vendas (fórmulas de Gustavo, classe A; ver 01 §E.1), com recortes por empreendimento, UN, origem, canal, período, dia, horário, público, captador, SDR, líder, sala, produto, benefício e campanha.
-3. **Conversão de sala de 30% é diretriz (C)**. Não assumir o denominador. Sempre separar venda bruta de venda líquida e acompanhar cancelamento, distrato, inadimplência, VGV bruto e líquido, ticket médio e VGV por apresentação.
+3. **Conversão de sala de 30% é diretriz (C)**. Não assumir numerador, denominador nem janela. Sempre separar venda bruta de venda líquida e acompanhar cancelamento, distrato, inadimplência, VGV bruto e líquido, ticket médio e VGV por apresentação.
 4. **Venda certa, para o cliente certo, na origem certa, com custo adequado e alta permanência.** Venda bruta alta com distrato alto não é operação eficiente.
 5. **Benefício não é presente sem controle.** Todo benefício tem objetivo, público, canal, custo, alçada, quantidade, data e vínculos com cliente, agendamento, show, venda e retorno.
 6. **Prospecção não termina no agendamento.** O ciclo é fechado: Prospecção → Sala → Prospecção.
@@ -79,8 +79,10 @@ Nada de recomendação genérica ("treine a equipe", "use CRM"). Cada recomenda�
 | Arquivo | Conteúdo |
 |---|---|
 | `00-regras-do-projeto.md` | Este arquivo: regras permanentes. |
+| `01a-itens-da-v0.1-mantidos.md` | Tabelas completas da v0.1 que continuam válidas (lacunas L1–L14, riscos RK1–RK12, oportunidades O1–O9). |
 | `01-analise-critica-e-mapa-mestre.md` | Análise crítica do documento-base, conciliação, decisões D1–D24, Mapa Mestre A–U (v0.2), perguntas e checklist de dados (seção final). |
 | `02-registro-de-informacoes.md` | Registro consolidado (controle de versão da memória), com cada informação e sua classe A–F. Prevalece sobre o 02b. |
 | `02b-registro-detalhado-documento-base.md` | Registro item a item do documento-base (313 itens), com as classes revisadas pelos verificadores. |
+| `02c-conflitos-conciliados.md` | Os 52 conflitos entre documento-base, briefing e v0.1, com o que prevaleceu e a resolução. |
 | `03-fontes-e-benchmarks.md` | Fatos externos com fonte e status de verificação (classe E). |
-| `base/` | Pasta para o documento-base e as planilhas enviadas por Gustavo. |
+| `base/` | Documento-base e planilhas enviadas por Gustavo. **Só entram no Git com o repositório privado** (regra §6); sem dados pessoais identificáveis. |

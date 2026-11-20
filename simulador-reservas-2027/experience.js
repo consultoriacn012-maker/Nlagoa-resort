@@ -261,6 +261,7 @@
       await loadPeople();
       if(token){
         try{const me=await request("me");currentUser=me.user;
+          sessionQuotes=Number(me.session_quotes)||0;
           if(currentUser.is_admin)showAdmin(currentUser);else showOperator(currentUser);
           if(currentUser.must_change_password)toast("Senha padrão em uso. Recomenda-se alterá-la.");
         }catch{token="";sessionStorage.removeItem(STORAGE_KEY);showAuth();}

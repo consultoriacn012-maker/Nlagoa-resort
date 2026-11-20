@@ -120,19 +120,29 @@
       <button type="button" data-exp-period="7">Últimos 7 dias</button>
       <button type="button" data-exp-period="30">Últimos 30 dias</button>
     </div>
-    <p class="exp-muted" style="margin:13px 0 0">Orçamentos são contabilizados quando o operador clica em Simular, Copiar orçamento ou Baixar PDF. Repetir uma dessas ações para a mesma simulação e sessão não cria outro orçamento.</p>
+    <p class="exp-muted" style="margin:13px 0 0">Simulações: orçamentos distintos gerados pelo operador (um por configuração). Cópias: cada uso concluído de Copiar orçamento, inclusive repetido. As datas refletem quando cada ação aconteceu. Copiar não comprova envio ao cliente.</p>
   </div>
   <div class="exp-kpis">
-    <div class="exp-kpi"><span class="exp-kicker">Orçamentos</span><strong id="expKpiQuotes">—</strong><span class="exp-trend">Simulações distintas</span></div>
+    <div class="exp-kpi"><span class="exp-kicker">Orçamentos distintos</span><strong id="expKpiQuotes">—</strong><span class="exp-trend">Orçamentos únicos registrados</span></div>
     <div class="exp-kpi"><span class="exp-kicker">Volume orçado</span><strong id="expKpiValue">—</strong><span class="exp-trend">Valores estimados, não vendas</span></div>
-    <div class="exp-kpi"><span class="exp-kicker">Cliques em simular</span><strong id="expKpiSimulations">—</strong><span class="exp-trend">Ações registradas</span></div>
-    <div class="exp-kpi"><span class="exp-kicker">Orçamentos copiados</span><strong id="expKpiCopies">—</strong><span class="exp-trend">Ações registradas</span></div>
+    <div class="exp-kpi"><span class="exp-kicker">Simulações realizadas</span><strong id="expKpiSimulations">—</strong><span class="exp-trend">Orçamentos distintos gerados</span></div>
+    <div class="exp-kpi"><span class="exp-kicker">Cópias de orçamento</span><strong id="expKpiCopies">—</strong><span class="exp-trend">Cópias concluídas, inclusive repetidas</span></div>
     <div class="exp-kpi"><span class="exp-kicker">PDFs gerados</span><strong id="expKpiPdf">—</strong><span class="exp-trend">Ações registradas</span></div>
   </div>
   <div class="exp-charts">
-    <section class="exp-panel"><h2>Orçamentos por data</h2><div id="expChartDaily" class="exp-bars-scroll"><p class="exp-loading">Carregando...</p></div></section>
-    <section class="exp-panel"><h2>Orçamentos por operador</h2><div id="expChartOperator" class="exp-bars-scroll"><p class="exp-loading">Carregando...</p></div></section>
+    <section class="exp-panel"><h2>Simulações por data</h2><div id="expChartDaily" class="exp-bars-scroll"><p class="exp-loading">Carregando...</p></div></section>
+    <section class="exp-panel"><h2>Cópias por data</h2><div id="expChartCopiesDaily" class="exp-bars-scroll"><p class="exp-loading">Carregando...</p></div></section>
+    <section class="exp-panel"><h2>Simulações por operador</h2><div id="expChartOperator" class="exp-bars-scroll"><p class="exp-loading">Carregando...</p></div></section>
+    <section class="exp-panel"><h2>Cópias por operador</h2><div id="expChartCopiesOperator" class="exp-bars-scroll"><p class="exp-loading">Carregando...</p></div></section>
   </div>
+  <section class="exp-panel">
+    <h2>Produtividade por operador e data</h2>
+    <p class="exp-muted">As simulações e cópias são medidas separadamente, conforme a data em que foram registradas.</p>
+    <div class="exp-table-scroll"><table class="exp-table">
+      <thead><tr><th>Data</th><th>Operador</th><th>Simulações</th><th>Cópias</th><th>PDFs gerados</th></tr></thead>
+      <tbody id="expActivityRows"><tr><td colspan="5" class="exp-loading">Aguardando os registros...</td></tr></tbody>
+    </table></div>
+  </section>
   <section class="exp-panel">
     <div class="exp-table-head"><h2>Detalhamento dos orçamentos</h2><span id="expAdminStatus" class="exp-status">Aguardando consulta...</span></div>
     <div class="exp-table-scroll">

@@ -1,0 +1,293 @@
+
+/* Lagoa Experience — adaptação responsiva para smartphones e tablets.
+   Arquivo de apresentação: não altera regras comerciais nem mensuração. */
+:root{--mobile-tap:44px}
+html{width:100%;scroll-padding-top:84px}
+body{width:100%;min-width:0}
+.page,.cards-layout,.card,.card-inner,.result-card,.calendar-card,.calendar-panel,
+.form-grid,.stat-grid,.exp-admin-screen,.exp-panel,.exp-kpi,.exp-charts,
+.exp-tariff-editor,.exp-tariff-section{min-width:0}
+button,input,select,textarea{touch-action:manipulation}
+button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible{
+  outline:3px solid #22a6dc;outline-offset:3px
+}
+.mobile-shortcuts{display:none}
+/* Tablet pequeno: um fluxo vertical, preservando o visual desktop em monitores. */
+@media(max-width:900px){
+  .cards-layout{grid-template-columns:minmax(0,1fr);gap:18px}
+  .calendar-card{grid-column:auto}
+  .calendar-card .card-inner{grid-template-columns:minmax(0,1fr);gap:20px}
+  .calendar-intro .legend{max-width:100%}
+  .result-card,.calendar-card{width:100%}
+  .exp-admin-screen{width:100%;max-width:100%}
+  .exp-panel{min-width:0}
+  .exp-table-scroll,.exp-tariff-table-wrap{
+    max-width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;
+    overscroll-behavior-x:contain
+  }
+}
+@media(max-width:650px){
+  html{scroll-padding-top:75px}
+  .page{
+    width:100%;max-width:100%;
+    padding:0 max(12px,env(safe-area-inset-right)) calc(32px + env(safe-area-inset-bottom))
+      max(12px,env(safe-area-inset-left))
+  }
+  .topbar{min-height:73px;height:auto;padding:13px 2px;gap:8px}
+  .brand{gap:11px;min-width:0}
+  .brand img{width:clamp(102px,33vw,136px);max-width:100%;height:auto}
+  .brand-divider{height:31px;flex-shrink:0}
+  .brand-sub{font-size:9.5px;letter-spacing:.04em;line-height:1.4;overflow-wrap:anywhere}
+  .top-meta{display:none}
+  .hero{
+    min-height:0;border-radius:18px;padding:24px 20px 23px;
+    box-shadow:0 9px 23px rgba(34,76,124,.13)
+  }
+  .hero h1{font-size:clamp(25px,6.8vw,32px);line-height:1.2;letter-spacing:-.035em}
+  .hero p{font-size:12.5px;line-height:1.65;max-width:100%}
+  .hero-pills{margin-top:17px;gap:7px}
+  .hero-pill{font-size:10px;padding:7px 10px}
+  .mobile-shortcuts{
+    display:grid;grid-template-columns:repeat(3,minmax(0,1fr));
+    gap:5px;margin:13px 0 0;padding:5px;position:sticky;top:0;z-index:30;
+    border:1px solid #e0e9f3;border-radius:12px;
+    background:rgba(255,255,255,.97);
+    box-shadow:0 4px 14px #28467615;
+    -webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px)
+  }
+  .mobile-shortcuts a{
+    min-height:var(--mobile-tap);display:flex;align-items:center;justify-content:center;
+    padding:8px 4px;border-radius:9px;text-align:center;white-space:nowrap;
+    font-size:11px;font-weight:800;color:#2b5b86
+  }
+  .mobile-shortcuts a:first-child{background:#e7f4fc;color:#136e9c}
+  .mobile-shortcuts a:active{background:#d6effa}
+  #mobileFormSection,#mobileResultSection,#mobileCalendarSection{scroll-margin-top:77px}
+  .cards-layout{margin-top:13px;gap:14px}
+  .card{border-radius:17px;overflow:hidden}
+  .card-inner{padding:19px 16px}
+  .section-heading{gap:11px}
+  .section-heading h2{font-size:20px;line-height:1.25}
+  .section-heading p{font-size:12px;line-height:1.55}
+  .year-picker{padding:13px;gap:12px;margin-bottom:17px;border-radius:13px}
+  .year-segments{width:100%}
+  .year-choice{flex:1;min-height:var(--mobile-tap);font-size:14px}
+  .hotel-switch{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-bottom:18px}
+  .hotel-option{
+    min-width:0;min-height:72px;padding:10px 8px;gap:8px;
+    border-radius:12px;justify-content:flex-start
+  }
+  .hotel-option .hotel-glyph{width:30px;height:36px;flex-shrink:0}
+  .hotel-option span:last-child{min-width:0}
+  .hotel-option strong{font-size:12px;line-height:1.3;overflow-wrap:anywhere}
+  .hotel-option small{font-size:9px;line-height:1.2}
+  .form-grid{grid-template-columns:minmax(0,1fr);gap:14px}
+  .form-grid > div,.form-grid .wide{grid-column:auto;min-width:0}
+  .form-grid .label,.label{font-size:12px}
+  .form-grid .input,.form-grid .select,.discount-wrap .input,
+  .map-choice .select,.age-item select{
+    width:100%;max-width:100%;min-width:0;min-height:var(--mobile-tap);
+    font-size:16px;line-height:1.3
+  }
+  input[type="date"]{min-width:0;max-width:100%;-webkit-appearance:auto;appearance:auto}
+  input[type="number"]{min-width:0}
+  .hint,.ages-note{font-size:11px;line-height:1.55}
+  .children-stepper{min-height:var(--mobile-tap)}
+  .children-stepper button{min-width:53px;font-size:25px;touch-action:manipulation}
+  .children-stepper .input{min-height:50px;height:50px;font-size:17px}
+  .children-ages{padding:13px 11px;border-radius:12px}
+  .ages-grid{grid-template-columns:minmax(0,1fr);gap:9px;max-height:none;overflow:visible;padding-right:0}
+  .age-item{padding:10px}
+  .age-item label{font-size:12px}
+  .age-item select{padding:10px 33px 10px 10px}
+  .age-status{font-size:10px;padding:5px 9px}
+  .child-policy{padding:12px}
+  .child-policy p{font-size:11px;line-height:1.6}
+  .map-choice{padding:13px}
+  .discount-wrap{grid-template-columns:minmax(0,1fr);gap:11px}
+  .discount-info{padding:11px 13px}
+  .fieldset-divider{margin-top:16px}
+  .actions-primary{
+    display:grid;grid-template-columns:minmax(0,1fr);gap:10px;margin-top:18px
+  }
+  .actions-primary .btn{
+    width:100%;min-height:50px;font-size:14px
+  }
+  .result-head,.result-main{padding:19px 16px}
+  .result-head h2{font-size:17px}
+  .result-topline{flex-wrap:wrap;gap:8px}
+  .result-sub{font-size:12px;line-height:1.55;margin-top:13px}
+  .stat-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-bottom:16px}
+  .stat{padding:11px 9px;border-radius:11px;min-width:0}
+  .stat label{font-size:10px}
+  .stat strong{font-size:12px;overflow-wrap:anywhere}
+  .full-price{font-size:clamp(20px,7vw,25px)}
+  .total-block{padding:15px 13px;flex-direction:column;align-items:stretch;gap:7px}
+  .total-price{font-size:clamp(26px,8vw,34px);overflow-wrap:anywhere}
+  .ceia-form-alert,.ceia-result{padding:13px}
+  .ceia-cost-line{flex-direction:column;align-items:flex-start;gap:6px}
+  .ceia-comparison{grid-template-columns:minmax(0,1fr)}
+  .benefit-stack{gap:9px}
+  .benefit{padding:12px;gap:10px}
+  .benefit-title{line-height:1.4}
+  .share-actions{
+    grid-template-columns:minmax(0,1fr)!important;
+    gap:10px;margin-top:17px
+  }
+  .share-actions .btn{width:100%;min-height:51px;padding:0 12px;font-size:14px}
+  .quote-preview-block{margin-top:17px}
+  .quote-preview-title{gap:4px;padding:13px}
+  .quote-preview{font-size:12px;line-height:1.7;padding:12px;max-height:360px}
+  .other-hotel{align-items:flex-start;flex-direction:column;gap:10px}
+  .other-hotel button{min-height:var(--mobile-tap);width:100%;font-size:12px}
+  .table-scroll{width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .breakdown{min-width:350px}
+  .breakdown td{font-size:11px}
+  .calendar-card .card-inner{padding:17px 12px;gap:13px}
+  .calendar-intro h2{font-size:21px}
+  .calendar-intro p{font-size:12px}
+  .legend{display:flex;flex-wrap:wrap;gap:8px}
+  .calendar-panel{width:100%;min-width:0;padding:11px 7px;border-radius:13px}
+  .calendar-nav{gap:6px;flex-wrap:wrap}
+  .calendar-nav strong{font-size:14px}
+  .nav-controls{gap:7px}
+  .nav-controls button{width:var(--mobile-tap);height:var(--mobile-tap);font-size:20px}
+  .calendar-price-guide{font-size:11px;min-height:44px;padding:10px;line-height:1.45}
+  .calendar-grid{grid-template-columns:repeat(7,minmax(0,1fr));gap:2px}
+  .calendar-grid .weekday{font-size:9px;padding:8px 0}
+  .calendar-grid .day{width:100%;min-width:0;min-height:68px;padding:7px 0 5px;gap:4px;border-radius:8px}
+  .calendar-grid .day>b{font-size:12px}
+  .calendar-grid .day .day-price{
+    max-width:100%;font-size:clamp(8px,2.25vw,10px);
+    font-weight:800;letter-spacing:-.06em;font-variant-numeric:tabular-nums
+  }
+  .calendar-grid .day .day-price.unavailable{font-size:7px}
+  .calendar-grid .day span[class^="s-"]{margin-top:0}
+  .calendar-foot{font-size:10px;line-height:1.5}
+  .notice-banner{padding:13px;gap:10px;font-size:11px;align-items:flex-start}
+  .footer{padding-bottom:5px}
+  /* Login e identificação no celular */
+  .exp-auth-screen{
+    min-height:100vh;min-height:100dvh;
+    padding:max(16px,env(safe-area-inset-top)) max(12px,env(safe-area-inset-right))
+      max(20px,env(safe-area-inset-bottom)) max(12px,env(safe-area-inset-left))
+  }
+  .exp-auth-card{max-width:480px;padding:25px 19px;border-radius:20px}
+  .exp-auth-mark{margin-bottom:23px;font-size:18px}
+  .exp-auth-card h1{font-size:24px}
+  .exp-auth-card .exp-muted{font-size:13px}
+  .exp-auth-card .exp-field{margin-top:17px}
+  .exp-input,.exp-select{height:48px;min-height:var(--mobile-tap);font-size:16px}
+  .exp-auth-submit{min-height:50px;font-size:15px}
+  .exp-toolbar{
+    display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px 9px;
+    align-items:center;justify-content:stretch;width:100%;
+    padding:12px max(12px,env(safe-area-inset-left));
+    position:relative;line-height:1.35
+  }
+  .exp-toolbar strong{grid-column:1/-1;font-size:12px;overflow-wrap:anywhere;line-height:1.5}
+  .exp-toolbar small{grid-column:1/-1;font-size:11px}
+  .exp-toolbar .exp-toolbar-spacer{display:none}
+  .exp-toolbar button{width:100%;min-height:var(--mobile-tap);font-size:12px;padding:7px 8px}
+  /* Relatórios administrativos no celular */
+  .exp-admin-screen{
+    padding:17px max(11px,env(safe-area-inset-right))
+      calc(32px + env(safe-area-inset-bottom))
+      max(11px,env(safe-area-inset-left))
+  }
+  .exp-admin-head{gap:14px;margin-bottom:15px;align-items:stretch;flex-direction:column}
+  .exp-admin-brand{gap:10px;min-width:0}
+  .exp-admin-brand h1{font-size:19px;line-height:1.3;overflow-wrap:anywhere}
+  .exp-admin-brand p{font-size:12px;line-height:1.5}
+  .exp-admin-actions{
+    display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;width:100%
+  }
+  .exp-admin-actions button{width:100%;min-height:var(--mobile-tap);padding:7px;font-size:11px}
+  .exp-admin-tabs{
+    display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;margin-bottom:14px;
+    border:0;overflow:visible
+  }
+  .exp-admin-tab{
+    min-width:0;min-height:48px;padding:9px 5px;border:1px solid #dbe6f0;
+    border-radius:10px;font-size:12px;white-space:normal
+  }
+  .exp-admin-tab.active{border-color:#87bfde;background:white}
+  .exp-panel{padding:15px 12px;border-radius:15px;margin-bottom:13px}
+  .exp-panel h2{font-size:15px;line-height:1.4;margin-bottom:11px}
+  .exp-filter-grid{grid-template-columns:minmax(0,1fr);gap:11px}
+  .exp-filter-grid .exp-field:nth-child(3){grid-column:auto}
+  .exp-filter-grid .exp-input,.exp-filter-grid .exp-select{height:48px}
+  .exp-filter-grid>button{width:100%;min-height:var(--mobile-tap)}
+  .exp-quick-period{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+  .exp-quick-period button{min-height:var(--mobile-tap);padding:8px 3px;font-size:10.5px}
+  .exp-kpis{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:12px 0}
+  .exp-kpi{min-width:0;padding:12px;border-radius:13px}
+  .exp-kpi strong{font-size:clamp(17px,5.7vw,25px);letter-spacing:-.025em;overflow-wrap:anywhere}
+  .exp-kpi .exp-kicker{font-size:10px;line-height:1.4}
+  .exp-kpi .exp-trend{font-size:10px;line-height:1.4;display:block}
+  .exp-kpi:last-child{grid-column:1/-1}
+  .exp-charts{grid-template-columns:minmax(0,1fr);gap:11px}
+  .exp-bar-row{
+    grid-template-columns:minmax(75px,31%) minmax(0,1fr) 30px;
+    gap:6px;margin:10px 0
+  }
+  .exp-bar-row span:first-child{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .exp-table-scroll,.exp-tariff-table-wrap{
+    width:100%;max-width:100%;overflow-x:auto;overscroll-behavior-x:contain;
+    -webkit-overflow-scrolling:touch;border-radius:9px
+  }
+  .exp-table-scroll::before,.exp-tariff-table-wrap::before{
+    content:"Deslize a tabela para os lados ↔";display:block;
+    padding:8px 5px;font-size:10px;font-weight:700;color:#617f9b;
+    background:#f7fafd
+  }
+  .exp-table{width:max-content;min-width:100%}
+  .exp-table th,.exp-table td{padding:11px 12px;font-size:11px}
+  .exp-table td:first-child,.exp-table th:first-child{position:sticky;left:0;background:#fff;z-index:2;box-shadow:2px 0 4px #2546720a}
+  .exp-table th:first-child{background:#f5f8fc;z-index:3}
+  .exp-tariff-toolbar{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+  .exp-tariff-toolbar .exp-field{min-width:0;width:100%;margin:0}
+  .exp-tariff-toolbar .exp-field label{font-size:11px}
+  .exp-tariff-toolbar button{width:100%;min-width:0;min-height:var(--mobile-tap);padding:8px;font-size:12px}
+  .exp-tariff-editor{gap:14px}
+  .exp-tariff-section{border-radius:12px}
+  .exp-tariff-section h3{font-size:13px;padding:12px}
+  .exp-tariff-table{min-width:620px}
+  .exp-tariff-table tbody th,.exp-tariff-table thead th:first-child{
+    position:sticky;left:0;z-index:2;background:#fbfcfe;box-shadow:2px 0 4px #29446614
+  }
+  .exp-tariff-table thead th:first-child{z-index:3;background:#f6f9fd}
+  .exp-tariff-input{min-height:var(--mobile-tap);font-size:16px}
+  .exp-toast{
+    left:12px;right:12px;bottom:calc(12px + env(safe-area-inset-bottom));
+    max-width:none;font-size:12px;overflow-wrap:anywhere
+  }
+  .exp-password-dialog{width:calc(100vw - 24px);max-height:90dvh;overflow-y:auto;padding:20px 15px}
+  .exp-password-dialog .exp-field{margin-top:11px}
+  .exp-password-buttons button{min-height:var(--mobile-tap)}
+}
+@media(max-width:360px){
+  .page{padding-left:10px;padding-right:10px}
+  .topbar{min-height:67px}
+  .brand img{width:104px}
+  .brand{gap:9px}
+  .brand-sub{font-size:9px}
+  .hero{padding:20px 16px}
+  .hero h1{font-size:24px}
+  .hero-pill{padding:6px 8px;font-size:9px}
+  .card-inner{padding:16px 12px}
+  .calendar-card .card-inner{padding:15px 10px}
+  .calendar-panel{padding:10px 5px}
+  .calendar-grid{gap:1px}
+  .calendar-grid .day{min-height:65px}
+  .calendar-grid .day .day-price{font-size:7.6px;letter-spacing:-.07em}
+  .exp-kpi strong{font-size:18px}
+  .exp-admin-tab{font-size:11px}
+}
+@media(prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  .btn,.hotel-option,.year-choice{transition:none}
+}
+@media print{
+  .mobile-shortcuts{display:none!important}
+}

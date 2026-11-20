@@ -666,9 +666,12 @@ function quoteText(q){
   '📅 *Período:* '+shortDate(q.start)+' a '+shortDate(q.end)+'/'+q.end.slice(0,4),
   '🛎️ *Quantidade de dias:* '+pad2(nights)+' diária'+(nights===1?'':'s')+' - Sendo '+pad2(nights)+' noite'+(nights===1?'':'s')+' e '+pad2(days)+' dia'+(days===1?'':'s'),
   '🏨 *Hotel:* '+hotel,
-  '👨‍👩‍👧‍👦 *Hospedagem para:* '+pad2(q.adults)+' adulto'+(q.adults===1?'':'s')+' e '+pad2(q.children)+' criança'+(q.children===1?'':'s'),
-  '🎈 *Criança Free:* '+pad2(q.freeChildren)+' gratuita'+(q.freeChildren===1?'':'s')+' e '+pad2(q.payingGuests)+' pagante'+(q.payingGuests===1?'':'s')+' na hospedagem'
+  '👨‍👩‍👧‍👦 *Hospedagem para:* '+pad2(q.adults)+' adulto'+(q.adults===1?'':'s')+' e '+pad2(q.children)+' criança'+(q.children===1?'':'s')
  ];
+ if(q.children>0)lines.push(
+  '🎈 *Criança Free:* '+pad2(q.freeChildren)+' gratuita'+(q.freeChildren===1?'':'s')+
+  ' e '+pad2(q.payingChildren)+' pagante'+(q.payingChildren===1?'':'s')+' na hospedagem'
+ );
  if(q.ceiaTotal){
   lines.push(
    '✨ *Valor Particular (sem ceia):* '+money(q.total),
@@ -781,7 +784,7 @@ function buildQuotePdfBytes(q){
  stroke(60,310,535,310,rule,.8);
  txt(60,320,'HÓSPEDES',7.4,muted,true);
  txt(60,334,String(q.adults).padStart(2,'0')+' adulto(s) e '+String(q.children).padStart(2,'0')+' criança(s)',10.8,ink,true);
- txt(351,335,q.freeChildren+' criança(s) free',9,green,true);
+ if(q.children>0)txt(351,335,q.freeChildren+' gratuita(s) / '+q.payingChildren+' pagante(s)',8.5,green,true);
  // Benefícios.
  write(42,377,511,66,softGreen);
  write(42,377,5,66,green);

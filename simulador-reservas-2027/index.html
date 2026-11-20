@@ -181,7 +181,7 @@ function setYear(year){
 function renderResults(quote){
  state.quote=quote;$('#error').classList.add('hidden');
  const nights=quote.days.length,days=Math.max(0,nights-1),installments=installmentPlan(quote.net);
- $('#resultSub').textContent=hotNames[quote.hotel]+' • '+nights+' diária(s) • '+quote.adults+' adulto(s) e '+quote.children+' criança(s)';
+ $('#resultSub').textContent=hotNames[quote.hotel]+' • '+quote.year+' • '+nights+' diária(s) • '+quote.adults+' adulto(s) e '+quote.children+' criança(s)';
  $('#occupancyResult').textContent=quote.payingGuests+' hóspede(s) pagante(s) • '+quote.freeChildren+' criança(s) free na hospedagem'+(quote.payingChildren?' • '+quote.payingChildren+' criança(s) pagante(s)':'');
  $('#hotelResult').textContent=hotNames[quote.hotel];$('#mealResult').textContent=includedMeals(quote);
  $('#periodResult').textContent=shortDate(quote.start)+' a '+shortDate(quote.end);
@@ -197,10 +197,28 @@ function renderResults(quote){
  $('#seasonSummary').innerHTML=Object.entries(counts).map(([c,n])=>'<span class="season-tag"><i class="s-'+c+'"></i>'+seasonNames[c]+' · '+n+' diária(s)</span>').join('');
  $('#rows').innerHTML=buildGroups(quote.days).map(g=>'<tr><td><strong>'+shortDate(g.start)+'–'+shortDate(g.end)+'</strong><br><span style="color:#8b9cb1">'+seasonNames[g.season]+'</span></td><td class="nights">'+g.count+' × '+money(g.rate)+'</td><td class="highlight">'+money(g.total)+'</td></tr>').join('');
  $('#quotePreview').textContent=quoteText(quote);
- const other=quoteFor(quote.hotel==='eco'?'jardins':'eco',quote.meal,quote.guests,quote.start,quote.end,quote.discount,quote.adults,quote.childrenUnder12,quote.mapChoice,quote.childrenOver12);
- $('#otherHotelName').textContent=hotNames[other.hotel];$('#otherHotelValue').textContent=money(other.net);$('#otherHotelBtn').dataset.hotel=other.hotel;
+ const otherHotel=quote.hotel==='eco'?'jardins':'eco';
+ $('#otherHotelName').textContent=hotNames[otherHotel];$('#otherHotelBtn').dataset.hotel=otherHotel;
+ try{
+  const other=quoteFor(otherHotel,quote.meal,quote.guests,quote.start,quote.end,quote.discount,quote.adults,quote.childrenUnder12,quote.mapChoice,quote.childrenOver12,quote.children712);
+  $('#otherHotelValue').textContent=money(other.net);
+ }catch(err){$('#otherHotelValue').textContent='Tarifa não publicada para este período';}
 }
-function update(){try{const f=readForm();renderResults(quoteFor(f.hotel,f.meal,f.guests,f.start,f.end,f.discount,f.adults,f.children,f.mapChoice,f.childrenOver12));}catch(e){$('#error').textContent=e.message;$('#error').classList.remove('hidden');$('#resultSub').textContent='Ajuste os campos para calcular';$('#occupancyResult').textContent='—';$('#full').textContent='—';$('#net').textContent='—';$('#savingResult').textContent='—';$('#seasonSummary').innerHTML='';$('#rows').innerHTML='';$('#otherHotelValue').textContent='—';$('#parkEconomy').textContent='—';$('#parkCalculation').textContent='—';$('#installmentResult').textContent='—';$('#quotePreview').textContent='Preencha um período válido para visualizar o orçamento.';state.quote=null;}renderCalendar();}
+function update(){
+ try{
+  const f=readForm();
+  renderResults(quoteFor(f.hotel,f.meal,f.guests,f.start,f.end,f.discount,f.adults,f.children,f.mapChoice,f.childrenOver12,f.children712));
+ }catch(e){
+  $('#error').textContent=e.message;$('#error').classList.remove('hidden');
+  $('#resultSub').textContent='Ajuste os campos para calcular';$('#occupancyResult').textContent='—';
+  $('#full').textContent='—';$('#net').textContent='—';$('#savingResult').textContent='—';
+  $('#seasonSummary').innerHTML='';$('#rows').innerHTML='';$('#otherHotelName').textContent=state.hotel==='eco'?'Jardins':'Eco Towers';
+  $('#otherHotelValue').textContent='—';$('#parkEconomy').textContent='—';$('#parkCalculation').textContent='—';
+  $('#installmentResult').textContent='—';$('#quotePreview').textContent='Não há orçamento válido para copiar.';
+  state.quote=null;
+ }
+ renderCalendar();
+}
 function setHotel(hotel){state.hotel=hotel;document.querySelectorAll('.hotel-option').forEach(el=>{let active=el.dataset.hotel===hotel;el.classList.toggle('active',active);el.setAttribute('aria-pressed',String(active));});updateMapChoice();update();}
 const months=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
 function renderCalendar(){
@@ -240,9 +258,30 @@ function quoteText(q){
  ].join('\n');
 }
 async function copyQuote(){if(!state.quote)return;try{await navigator.clipboard.writeText(quoteText(state.quote));const b=$('#copyBtn'),orig=b.textContent;b.textContent='✓ Copiado!';setTimeout(()=>b.textContent=orig,1800);}catch{const ta=document.createElement('textarea');ta.value=quoteText(state.quote);document.body.appendChild(ta);ta.select();document.execCommand('copy');ta.remove();$('#copyBtn').textContent='✓ Copiado!';setTimeout(()=>$('#copyBtn').textContent='Copiar orçamento',1600);}}
-function clear(){state.hotel='eco';$('#checkin').value='2027-07-15';$('#checkout').value='2027-07-20';$('#meal').value='CAFE';$('#mapChoice').value='almoco';$('#adults').value='2';$('#children').value='0';$('#childrenOver12').value='0';$('#discount').value='0';updateMapChoice();state.month=6;state.selectionMode='start';setHotel('eco');}
-function init(){document.querySelectorAll('.hotel-option').forEach(btn=>btn.addEventListener('click',()=>setHotel(btn.dataset.hotel)));document.querySelectorAll('#checkin,#checkout,#meal,#mapChoice,#adults,#children,#childrenOver12,#discount').forEach(el=>el.addEventListener('input',()=>{if(el.id==='checkin'&&el.value?.startsWith('2027-'))state.month=Number(el.value.slice(5,7))-1;if(el.id==='meal')updateMapChoice();state.selectionMode='start';update();}));updateMapChoice();$('#prevMonth').addEventListener('click',()=>{state.month=(state.month+11)%12;renderCalendar();});$('#nextMonth').addEventListener('click',()=>{state.month=(state.month+1)%12;renderCalendar();});$('#resetBtn').addEventListener('click',clear);$('#copyBtn').addEventListener('click',copyQuote);$('#whatsappBtn').addEventListener('click',()=>{if(state.quote)window.open('https://wa.me/?text='+encodeURIComponent(quoteText(state.quote)),'_blank','noopener,noreferrer');});$('#printBtn').addEventListener('click',()=>window.print());$('#otherHotelBtn').addEventListener('click',()=>setHotel($('#otherHotelBtn').dataset.hotel));$('#refreshBtn').addEventListener('click',update);update();}
+function clear(){
+ $('#meal').value='CAFE';$('#mapChoice').value='almoco';$('#adults').value='2';
+ $('#children').value='0';$('#children712').value='0';$('#childrenOver12').value='0';$('#discount').value='0';
+ state.hotel='eco';setYear(state.year);setHotel('eco');
+}
+function init(){
+ document.querySelectorAll('.year-choice').forEach(btn=>btn.addEventListener('click',()=>setYear(btn.dataset.year)));
+ document.querySelectorAll('.hotel-option').forEach(btn=>btn.addEventListener('click',()=>setHotel(btn.dataset.hotel)));
+ document.querySelectorAll('#checkin,#checkout,#meal,#mapChoice,#adults,#children,#children712,#childrenOver12,#discount').forEach(el=>el.addEventListener('input',()=>{
+  if(el.id==='checkin'&&el.value?.startsWith(String(state.year)+'-'))state.month=Number(el.value.slice(5,7))-1;
+  if(el.id==='meal')updateMapChoice();
+  state.selectionMode='start';update();
+ }));
+ $('#prevMonth').addEventListener('click',()=>{state.month=(state.month+11)%12;renderCalendar();});
+ $('#nextMonth').addEventListener('click',()=>{state.month=(state.month+1)%12;renderCalendar();});
+ $('#resetBtn').addEventListener('click',clear);
+ $('#copyBtn').addEventListener('click',copyQuote);
+ $('#whatsappBtn').addEventListener('click',()=>{if(state.quote)window.open('https://wa.me/?text='+encodeURIComponent(quoteText(state.quote)),'_blank','noopener,noreferrer');});
+ $('#printBtn').addEventListener('click',()=>window.print());
+ $('#otherHotelBtn').addEventListener('click',()=>setHotel($('#otherHotelBtn').dataset.hotel));
+ $('#refreshBtn').addEventListener('click',update);
+ setYear(2027);
+}
 if(typeof document!=='undefined')document.addEventListener('DOMContentLoaded',init);
 // Expose pure helpers for automated correctness checks.
-if(typeof module!=='undefined')module.exports={tarifas,calendar2027,seasonFor,dailyRate,quoteFor,occupancy,FREE_CHILD_LIMIT,priceTier,buildGroups,quoteText,installmentPlan,includedMeals};
+if(typeof module!=='undefined')module.exports={tarifas,tarifas2026,tarifarios,calendar2027,calendar2026,seasonFor,dailyRate,quoteFor,occupancy,FREE_CHILD_LIMIT,priceTier,buildGroups,quoteText,installmentPlan,includedMeals};
 </script></body></html>

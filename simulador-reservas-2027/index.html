@@ -139,7 +139,7 @@ function getSeasonCount(days){const a={};for(const x of days)a[x.season]=(a[x.se
 const pad2=n=>String(n).padStart(2,'0');
 function includedMeals(q){
  if(q.meal==='CAFE')return 'Café da Manhã';
- if(q.meal==='MAP')return q.mapChoice==='jantar'?'Café da Manhã + Jantar':'Café da Manhã + Almoço';
+ if(q.meal==='MAP')return q.year===2026&&q.hotel==='jardins'?'Meia pensão (MAP) — refeição a confirmar':q.year===2026&&q.hotel==='eco'?'Café da Manhã + Jantar':q.mapChoice==='jantar'?'Café da Manhã + Jantar':'Café da Manhã + Almoço';
  return 'Pensão Completa (Café da Manhã + Almoço + Jantar)';
 }
 function installmentPlan(cents){
@@ -152,9 +152,31 @@ function installmentPlan(cents){
  return {count,base,last,summary,quote};
 }
 function updateMapChoice(){
- const isMap=$('#meal').value==='MAP';
- $('#mapChoiceWrap').classList.toggle('hidden',!isMap);
- $('#mapChoice').disabled=!isMap;
+ const map=$('#meal').value==='MAP';
+ const selectable=map&&state.year===2027;
+ $('#mapChoiceWrap').classList.toggle('hidden',!selectable);
+ $('#mapChoice').disabled=!selectable;
+ if(map&&state.year===2026&&state.hotel==='eco')$('#mapChoice').value='jantar';
+}
+function setYear(year){
+ year=Number(year);if(![2026,2027].includes(year))return;
+ state.year=year;state.month=6;state.selectionMode='start';
+ $('#checkin').min=year+'-01-01';$('#checkin').max=year+'-12-31';
+ $('#checkout').min=year+'-01-02';$('#checkout').max=(year+1)+'-01-01';
+ $('#checkin').value=year+'-07-15';$('#checkout').value=year+'-07-20';
+ document.querySelectorAll('[data-year]').forEach(btn=>{
+  const active=Number(btn.dataset.year)===year;
+  btn.classList.toggle('active',active);btn.setAttribute('aria-pressed',String(active));
+ });
+ $('#brandYear').textContent='Mini Vac '+year;
+ $('#yearTag').textContent='Ano tarifário '+year;
+ $('#resultYear').textContent='MINI VAC · '+year;
+ $('#calendarTitle').textContent='Temporadas de '+year;
+ $('#footerYear').textContent=String(year);
+ $('#tariffRuleHint').textContent=year===2026?
+  'Eco Towers: DBL até 2, TPL 3, QDL 4, QTL 5, ADC acima de 5. Jardins: DBL até 2, TPL 3, QDL 4 e ADC acima de 4; crianças pagantes de 7–12 usam CHD. Eco Towers 2026 não tem tarifa Super Alta.':
+  'Eco Towers e Jardins: DBL até 2 pagantes, TPL 3, QDL 4, QTL 5; ADC acima de 5. Crianças gratuitas não elevam a faixa tarifária.';
+ updateMapChoice();update();
 }
 function renderResults(quote){
  state.quote=quote;$('#error').classList.add('hidden');
@@ -179,9 +201,27 @@ function renderResults(quote){
  $('#otherHotelName').textContent=hotNames[other.hotel];$('#otherHotelValue').textContent=money(other.net);$('#otherHotelBtn').dataset.hotel=other.hotel;
 }
 function update(){try{const f=readForm();renderResults(quoteFor(f.hotel,f.meal,f.guests,f.start,f.end,f.discount,f.adults,f.children,f.mapChoice,f.childrenOver12));}catch(e){$('#error').textContent=e.message;$('#error').classList.remove('hidden');$('#resultSub').textContent='Ajuste os campos para calcular';$('#occupancyResult').textContent='—';$('#full').textContent='—';$('#net').textContent='—';$('#savingResult').textContent='—';$('#seasonSummary').innerHTML='';$('#rows').innerHTML='';$('#otherHotelValue').textContent='—';$('#parkEconomy').textContent='—';$('#parkCalculation').textContent='—';$('#installmentResult').textContent='—';$('#quotePreview').textContent='Preencha um período válido para visualizar o orçamento.';state.quote=null;}renderCalendar();}
-function setHotel(hotel){state.hotel=hotel;document.querySelectorAll('.hotel-option').forEach(el=>{let active=el.dataset.hotel===hotel;el.classList.toggle('active',active);el.setAttribute('aria-pressed',String(active));});update();}
+function setHotel(hotel){state.hotel=hotel;document.querySelectorAll('.hotel-option').forEach(el=>{let active=el.dataset.hotel===hotel;el.classList.toggle('active',active);el.setAttribute('aria-pressed',String(active));});updateMapChoice();update();}
 const months=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
-function renderCalendar(){const m=state.month;$('#monthName').textContent=months[m]+' de 2027';let firstDay=(new Date(Date.UTC(2027,m,1)).getUTCDay()+6)%7;let n=new Date(Date.UTC(2027,m+1,0)).getUTCDate();let html=['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'].map(t=>`<div class="weekday">${t}</div>`).join('');html+='<div></div>'.repeat(firstDay);let start=$('#checkin').value,end=$('#checkout').value;for(let d=1;d<=n;d++){const date=`2027-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`,s=calendar2027[m][d-1];const selected=date===start||date===end;const between=start&&end&&date>start&&date<end;html+=`<button type="button" class="day ${selected?'selected':''} ${between?'between':''}" data-day="${date}" aria-label="${d} de ${months[m]}: ${seasonNames[s]}" title="${seasonNames[s]}${s==='N'||s==='R'?'':''}"><b>${d}</b><span class="s-${s}"></span></button>`;}$('#calendarDays').innerHTML=html;$('#calendarDays').querySelectorAll('button[data-day]').forEach(btn=>btn.addEventListener('click',()=>{const date=btn.dataset.day;const checkin=$('#checkin');const checkout=$('#checkout');if(state.selectionMode==='start'||date<=checkin.value){checkin.value=date;checkout.value='';state.selectionMode='end';}else{checkout.value=date;state.selectionMode='start';}update();}));}
+function renderCalendar(){
+ const m=state.month,y=state.year,yearCalendar=calendars[y];
+ $('#monthName').textContent=months[m]+' de '+y;
+ const firstDay=(new Date(Date.UTC(y,m,1)).getUTCDay()+6)%7,n=new Date(Date.UTC(y,m+1,0)).getUTCDate();
+ let html=['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'].map(t=>'<div class="weekday">'+t+'</div>').join('')+'<div></div>'.repeat(firstDay);
+ const start=$('#checkin').value,end=$('#checkout').value;
+ for(let d=1;d<=n;d++){
+  const date=y+'-'+String(m+1).padStart(2,'0')+'-'+String(d).padStart(2,'0'),season=yearCalendar[m][d-1];
+  const selected=date===start||date===end,between=start&&end&&date>start&&date<end;
+  html+='<button type="button" class="day '+(selected?'selected':'')+' '+(between?'between':'')+'" data-day="'+date+'" aria-label="'+d+' de '+months[m]+': '+seasonNames[season]+'" title="'+seasonNames[season]+'"><b>'+d+'</b><span class="s-'+season+'"></span></button>';
+ }
+ $('#calendarDays').innerHTML=html;
+ $('#calendarDays').querySelectorAll('button[data-day]').forEach(btn=>btn.addEventListener('click',()=>{
+  const date=btn.dataset.day,checkin=$('#checkin'),checkout=$('#checkout');
+  if(state.selectionMode==='start'||date<=checkin.value){checkin.value=date;checkout.value='';state.selectionMode='end';}
+  else{checkout.value=date;state.selectionMode='start';}
+  update();
+ }));
+}
 function quoteText(q){
  const nights=q.days.length,days=Math.max(0,nights-1),hotel=q.hotel==='eco'?'Lagoa Eco Towers':'Lagoa Jardins';
  return [

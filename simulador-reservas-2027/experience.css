@@ -1,0 +1,69 @@
+
+/* Lagoa Experience - autenticação e produtividade */
+body.auth-pending .page,body.exp-admin-mode .page{display:none!important}
+body.auth-pending,body.exp-admin-mode{background:#f2f6fb}
+[hidden]{display:none!important}
+.exp-auth-screen{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:28px 16px;background:radial-gradient(circle at 88% 18%,#d6f4f6 0%,transparent 38%),linear-gradient(135deg,#eef3fb,#f8fbff)}
+.exp-auth-card{width:100%;max-width:480px;background:#fff;border:1px solid #e0eaf4;border-radius:26px;box-shadow:0 24px 60px #2846761e;padding:36px}
+.exp-auth-mark{display:flex;align-items:center;gap:12px;font-weight:900;color:#2a4f86;letter-spacing:.03em;font-size:20px;margin-bottom:28px}
+.exp-auth-symbol{width:46px;height:46px;display:grid;place-items:center;border-radius:13px;color:white;background:linear-gradient(135deg,#285394,#13a8ca);font-size:22px}
+.exp-auth-eyebrow,.exp-label,.exp-kicker{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.085em;color:#5c799a}
+.exp-auth-card h1{font-size:26px;line-height:1.2;margin:10px 0 11px;color:#213b66}
+.exp-muted{color:#6b819d;font-size:13px;line-height:1.6}
+.exp-field{display:flex;flex-direction:column;gap:7px;margin:20px 0 0}
+.exp-field label{font-size:12px;font-weight:800;color:#405c7c}
+.exp-input,.exp-select{height:47px;width:100%;padding:0 13px;border:1px solid #d8e4f0;border-radius:12px;background:#fff;color:#274667;font:inherit;font-size:13px}
+.exp-input:focus,.exp-select:focus{outline:3px solid #a7e1f177;border-color:#4eb4d9}
+.exp-primary,.exp-secondary,.exp-outline{height:43px;border-radius:11px;border:0;padding:0 16px;font-size:12px;font-weight:800;cursor:pointer;transition:background .15s}
+.exp-primary{background:#2b67ad;color:#fff}.exp-primary:hover{background:#24598e}.exp-primary:disabled{opacity:.5;cursor:wait}
+.exp-secondary{background:#e8f1fb;color:#2d608e}.exp-secondary:hover{background:#dbe9f8}
+.exp-outline{background:white;border:1px solid #d8e4f0;color:#386188}.exp-outline:hover{background:#f1f8fb}
+.exp-auth-submit{width:100%;margin:24px 0 0;font-size:14px;height:48px}
+.exp-auth-error{font-size:12px;color:#a63d3d;background:#fff0f0;border:1px solid #f5d0d0;padding:12px;border-radius:10px;margin-top:14px}
+.exp-auth-footer{font-size:11px;color:#8090a5;text-align:center;margin-top:20px}
+.exp-toolbar{width:100%;display:flex;align-items:center;justify-content:center;gap:10px;background:#183b64;color:#fff;padding:9px 17px;position:relative;z-index:5}
+.exp-toolbar strong{font-size:12px}.exp-toolbar small{color:#c3e3f0;font-size:11px}
+.exp-toolbar button{border:1px solid #ffffff50;border-radius:8px;background:transparent;color:#fff;font-size:11px;font-weight:700;padding:6px 12px;cursor:pointer}
+.exp-toolbar .exp-toolbar-spacer{flex:0 1 320px}
+.exp-admin-screen{max-width:1300px;margin:auto;padding:28px 22px 60px;min-height:100vh}
+.exp-admin-head{display:flex;align-items:center;justify-content:space-between;gap:15px;margin-bottom:25px}
+.exp-admin-brand{display:flex;align-items:center;gap:13px}
+.exp-admin-brand h1{font-size:23px;color:#25466e;margin:0 0 5px}
+.exp-admin-brand p{color:#7a8ca1;font-size:12px;margin:0}
+.exp-admin-actions{display:flex;gap:9px;flex-wrap:wrap}
+.exp-panel{background:white;border:1px solid #e0e9f4;border-radius:18px;padding:21px;box-shadow:0 5px 15px #12396107;margin-bottom:18px}
+.exp-filter-grid{display:grid;grid-template-columns:1fr 1fr 1.6fr auto auto;gap:11px;align-items:end}
+.exp-filter-grid .exp-field{margin:0}.exp-filter-grid .exp-input,.exp-filter-grid .exp-select{height:41px}
+.exp-quick-period{display:flex;gap:8px;margin-top:13px;flex-wrap:wrap}
+.exp-quick-period button{border:1px solid #e0e8f2;border-radius:9px;padding:7px 13px;background:#f6f9fd;color:#426483;font-weight:700;cursor:pointer;font-size:11px}
+.exp-kpis{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px;margin:16px 0}
+.exp-kpi{background:#fff;border:1px solid #e1e9f2;border-radius:16px;padding:18px;min-width:0}
+.exp-kpi strong{display:block;font-size:24px;letter-spacing:-.05em;color:#1c4d82;line-height:1.4}
+.exp-kpi .exp-kicker{font-size:10px}
+.exp-kpi .exp-trend{font-size:11px;color:#8090a5}
+.exp-panel h2{font-size:16px;color:#25496f;margin:0 0 16px}
+.exp-charts{display:grid;grid-template-columns:1fr 1fr;gap:15px}
+.exp-bar-row{display:grid;grid-template-columns:115px minmax(60px,1fr) 36px;align-items:center;gap:9px;margin:13px 0;font-size:11px;color:#435b7a}
+.exp-bar-row .exp-bar-track{background:#edf4fb;height:13px;border-radius:99px;overflow:hidden}
+.exp-bar-row .exp-bar-fill{height:100%;border-radius:99px;background:linear-gradient(90deg,#2f6aa6,#19bad6)}
+.exp-bars-scroll{max-height:335px;overflow:auto}
+.exp-table-scroll{overflow:auto;max-height:510px}
+.exp-table{border-collapse:collapse;width:100%;white-space:nowrap;font-size:12px}
+.exp-table th{text-align:left;color:#667f9d;background:#f5f8fc;border-bottom:1px solid #dce6f0;padding:12px;position:sticky;top:0;z-index:1}
+.exp-table td{padding:12px;border-bottom:1px solid #edf2f6;color:#3c5775}
+.exp-table td.num{text-align:right;font-variant-numeric:tabular-nums}
+.exp-table tbody tr:hover{background:#f7fbff}
+.exp-table .exp-tag{padding:4px 8px;border-radius:99px;background:#eaf6fa;color:#24748b;font-weight:700;font-size:10px}
+.exp-table-head{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap}
+.exp-status{font-size:11px;color:#778ca4;white-space:normal}
+.exp-loading{padding:42px;text-align:center;color:#7288a2;font-size:13px}
+.exp-toast{position:fixed;right:22px;bottom:18px;z-index:9999;max-width:375px;background:#224d70;color:white;border-radius:12px;padding:12px 17px;box-shadow:0 14px 36px #192e4d35;font-size:12px;line-height:1.5;pointer-events:none}
+.exp-toast.error{background:#953e3e}
+.exp-password-dialog{width:min(94vw,420px);border:1px solid #dde9f2;border-radius:19px;box-shadow:0 18px 60px #16325242;padding:24px}
+.exp-password-dialog::backdrop{background:#0c234e89}
+.exp-password-dialog h2{font-size:19px;color:#285184}
+.exp-password-dialog .exp-field{margin-top:13px}
+.exp-password-buttons{display:flex;justify-content:flex-end;gap:8px;margin-top:20px}
+@media(max-width:1040px){.exp-filter-grid{grid-template-columns:repeat(3,1fr)}.exp-filter-grid button{width:100%}.exp-kpis{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:730px){.exp-admin-head{align-items:flex-start;flex-direction:column}.exp-filter-grid{grid-template-columns:1fr 1fr}.exp-filter-grid .exp-field:nth-child(3){grid-column:span 2}.exp-charts{grid-template-columns:1fr}.exp-kpis{grid-template-columns:repeat(2,1fr)}.exp-toolbar{flex-wrap:wrap}.exp-toolbar .exp-toolbar-spacer{display:none}}
+@media(max-width:470px){.exp-auth-card{padding:28px 21px}.exp-admin-screen{padding:16px 10px}.exp-panel{padding:16px}.exp-filter-grid{grid-template-columns:1fr}.exp-filter-grid .exp-field:nth-child(3){grid-column:auto}.exp-kpis{gap:8px}.exp-kpi{padding:12px}.exp-kpi strong{font-size:20px}.exp-bar-row{grid-template-columns:94px minmax(40px,1fr) 30px;font-size:10px}}

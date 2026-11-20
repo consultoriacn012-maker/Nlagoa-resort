@@ -274,7 +274,7 @@ function installmentPlan(cents){
   const differenceLabel=roundingDifference===0?'':'Ajuste de arredondamento: '+(roundingDifference>0?'+':'−')+money(Math.abs(roundingDifference))+'.';
   const summary=pad2(count)+'x de '+money(base)+' sem juros';
   const note='Total parcelado: '+money(roundedTotal)+'. '+differenceLabel+(roundingDifference?' Parcelas arredondadas matematicamente a centavos.':'');
-  const quote='💳 *Parcelamento em até 10x sem juros:* '+pad2(count)+'x de '+money(base)+'.'+
+  const quote='💳 *Parcelamento em até '+pad2(count)+'x de '+money(base)+' sem juros*.'+
     (roundingDifference?'\nℹ️ *Total parcelado:* '+money(roundedTotal)+' (ajuste de arredondamento: '+(roundingDifference>0?'+':'−')+money(Math.abs(roundingDifference))+').':'');
   return {count,base,last:base,roundedTotal,roundingDifference,summary,quote,note};
  }

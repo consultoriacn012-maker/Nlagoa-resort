@@ -69,7 +69,7 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible{
   .section-heading{gap:11px}
   .section-heading h2{font-size:20px;line-height:1.25}
   .section-heading p{font-size:12px;line-height:1.55}
-  .year-picker{padding:13px;gap:12px;margin-bottom:17px;border-radius:13px}
+  .year-picker{padding:13px;gap:12px;margin-bottom:17px;border-radius:13px;flex-direction:column;align-items:stretch}
   .year-segments{width:100%}
   .year-choice{flex:1;min-height:var(--mobile-tap);font-size:14px}
   .hotel-switch{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-bottom:18px}

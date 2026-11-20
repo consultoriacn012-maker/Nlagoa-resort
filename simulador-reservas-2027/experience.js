@@ -34,7 +34,9 @@
   function showAuth(){
     currentUser=null;document.body.classList.add("auth-pending");document.body.classList.remove("exp-admin-mode");
     $("experienceAuth").hidden=false;$("experienceAdmin").hidden=true;$("experienceToolbar").hidden=true;
-    $("expPassword").value="";$("expAuthError").hidden=true;
+    $("expPassword").value="";$("expPassword").type="password";
+    $("expTogglePassword").textContent="Mostrar";$("expTogglePassword").setAttribute("aria-pressed","false");
+    $("expTogglePassword").setAttribute("aria-label","Mostrar senha");$("expAuthError").hidden=true;
   }
   function showOperator(user){
     document.body.classList.remove("auth-pending","exp-admin-mode");
@@ -67,17 +69,26 @@
     event.preventDefault();
     const id=$("expOperatorSelect").value,password=$("expPassword").value;
     if(!id||!password){$("expAuthError").textContent="Selecione o operador e informe a senha.";$("expAuthError").hidden=false;return;}
+    $("expAuthError").hidden=true;
     $("expLoginBtn").disabled=true;$("expLoginBtn").textContent="Validando acesso...";
     try{
       const result=await request("login",{user_id:id,password},"");
       token=result.token;currentUser=result.user;sessionStorage.setItem(STORAGE_KEY,token);
       sessionQuotes=0;lastSimSignature="";clearTimeout(simulateTimer);
-      // Ao trocar de colaborador, a cotação do usuário anterior não pode ser atribuída ao próximo.
-      if(!currentUser.is_admin){
-        const reset=$("resetBtn");
-        if(reset&&typeof reset.click==="function")reset.click();
+      $("expLoginBtn").textContent="Carregando tarifários...";
+      try{
+        await syncTariffs();
+      }catch(error){
+        // Credenciais aceitas. Uma falha da base de tarifas não é senha incorreta.
+        token="";currentUser=null;sessionStorage.removeItem(STORAGE_KEY);
+        $("expAuthError").textContent="Senha validada, mas não foi possível carregar os tarifários: "+error.message+". Confira a conexão e tente novamente.";
+        $("expAuthError").hidden=false;
+        return;
       }
-      await syncTariffs();
+      // Ao trocar de colaborador, uma cotação anterior não pertence ao novo usuário.
+      if(!currentUser.is_admin){
+        try{$("resetBtn")?.click();}catch(error){console.warn("Falha ao limpar a cotação anterior.");}
+      }
       if(currentUser.is_admin)showAdmin(currentUser);else showOperator(currentUser);
       if(currentUser.must_change_password)toast("Senha padrão em uso. Recomenda-se alterá-la no menu Alterar senha.");
     }catch(err){$("expAuthError").textContent=err.message;$("expAuthError").hidden=false;}
@@ -466,6 +477,14 @@
   async function boot(){
     showAuth();
     $("expAuthForm").addEventListener("submit",login);
+    $("expTogglePassword").addEventListener("click",()=>{
+      const field=$("expPassword"),button=$("expTogglePassword");
+      const reveal=field.type==="password";
+      field.type=reveal?"text":"password";
+      button.textContent=reveal?"Ocultar":"Mostrar";
+      button.setAttribute("aria-pressed",String(reveal));
+      button.setAttribute("aria-label",reveal?"Ocultar senha":"Mostrar senha");
+    });
     $("expLogoutBtn").addEventListener("click",logout);
     $("expAdminLogout").addEventListener("click",logout);
     $("expApplyFilters").addEventListener("click",refreshAdmin);

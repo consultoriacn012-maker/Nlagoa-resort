@@ -95,3 +95,18 @@ body.auth-pending,body.exp-admin-mode{background:#f2f6fb}
 .exp-tariff-input:disabled{color:#aab8c5;background:#eef1f5}
 .exp-tariff-cell-note{display:block;font-size:9px;color:#9aaabe;text-align:right;margin-top:4px}
 @media(max-width:730px){.exp-tariff-toolbar .exp-field{flex:1 1 160px;min-width:140px}.exp-tariff-toolbar button{flex:1 1 120px}}
+
+/* Campo de senha: visualização opcional, inclusive no celular. */
+.exp-password-entry{position:relative;width:100%;min-width:0}
+.exp-password-entry .exp-input{padding-right:88px;width:100%}
+.exp-password-entry>button{
+ position:absolute;right:5px;top:50%;transform:translateY(-50%);
+ min-height:38px;min-width:72px;display:grid;place-items:center;
+ border:0;border-radius:9px;background:#edf5fb;
+ color:#2c608d;font-weight:800;font-size:12px;cursor:pointer
+}
+.exp-password-entry>button:focus-visible{outline:3px solid #80d7f5;outline-offset:1px}
+@media(max-width:650px){
+ .exp-password-entry>button{min-height:44px;right:3px}
+ .exp-password-entry .exp-input{padding-right:90px}
+}

@@ -1,7 +1,15 @@
 // Lagoa Experience - API de autenticação e produtividade
 // Código de servidor: nenhuma senha ou chave secreta é enviada ao navegador.
 const SUPA_URL=Deno.env.get("SUPABASE_URL")||"";
-const SERVICE_KEY=Deno.env.get("SUPABASE_SECRET_KEY")||Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")||"";
+function loadServiceKey():string{
+  // API keys novas não exigem JWT; mantém compatibilidade com chave legacy.
+  try{
+    const keys=JSON.parse(Deno.env.get("SUPABASE_SECRET_KEYS")||"{}");
+    if(typeof keys.default==="string"&&keys.default)return keys.default;
+  }catch(_){}
+  return Deno.env.get("SUPABASE_SECRET_KEY")||Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")||"";
+}
+const SERVICE_KEY=loadServiceKey();
 const allowedOrigins=new Set([
   "https://lagoa-simulador-reserva-experience.onrender.com",
   "https://lagoa-simulador-reservas-2027.onrender.com"

@@ -172,7 +172,9 @@ function quoteFor(hotel,meal,guests,start,end,discount,adults=guests,children=0,
  if(!Number.isFinite(discount)||discount<0||discount>100)throw Error('O desconto deve estar entre 0% e 100%.');
  const dates=datesBetween(start,end);
  const days=dates.map(d=>{const season=seasonFor(d);if(!season)throw Error('Não foi encontrada temporada para '+d+'.');return {date:d,season,rate:dailyRate(hotel,meal,occ.payingGuests,season,year,occ.paidChildren712)};});
- const total=days.reduce((sum,day)=>sum+day.rate,0),discountCents=Math.round(total*discount/100),net=total-discountCents;
+ const total=days.reduce((sum,day)=>sum+day.rate,0);
+ const discountBasisPoints=Math.round(discount*100);
+ const discountCents=Math.round(total*discountBasisPoints/10000),net=total-discountCents;
  const ceia=mandatoryCeia(dates,year,adults,occ.childrenUnder12,occ.children712,occ.children12,occ.childrenOver12);
  return {hotel,meal,...occ,mapChoice,year,start,end,discount,days,total,discountCents,net,ceia,ceiaTotal:ceia.total,totalWithCeia:total+ceia.total,netWithCeia:net+ceia.total,parkEconomy:adults*dates.length*15990};
 }

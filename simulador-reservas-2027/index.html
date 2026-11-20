@@ -51,12 +51,12 @@ const calendar2027=[
  'AMBBMMBBBBBASSMBBBMMBBBBBMMBBB',
  'BBMMBBBBBMMMMMMMMMAAAAANAAAAASR'
 ];
-// Tarifário Mini Vac 2026, valores em centavos, baixa/média/alta/(super alta quando publicada).
+// Tarifário Mini Vac 2026, valores em centavos, baixa/média/alta/super alta.
 const tarifas2026={
  eco:{
-  CAFE:{DBL:[25275,34650,62400],TPL:[38695,48063,82900],QDL:[52115,61475,103400],QTL:[65535,74888,123900],ADC:[13420,13413,20500]},
-  MAP:{DBL:[37375,46750,74500],TPL:[56845,66213,101050],QDL:[76315,85675,127600],QTL:[95785,105138,154150],ADC:[19470,19463,26550]},
-  FAP:{DBL:[49475,58850,86600],TPL:[74995,84363,119200],QDL:[100515,109875,151800],QTL:[126035,135388,184400],ADC:[25520,25513,32600]}
+  CAFE:{DBL:[25275,34650,62400,79250],TPL:[38695,48063,82900,108750],QDL:[52115,61475,103400,138250],QTL:[65535,74888,123900,167750],ADC:[13420,13413,20500,29500]},
+  MAP:{DBL:[37375,46750,74500,91350],TPL:[56845,66213,101050,126900],QDL:[76315,85675,127600,162450],QTL:[95785,105138,154150,198000],ADC:[19470,19463,26550,35550]},
+  FAP:{DBL:[49475,58850,86600,103450],TPL:[74995,84363,119200,145050],QDL:[100515,109875,151800,186650],QTL:[126035,135388,184400,228250],ADC:[25520,25513,32600,41600]}
  },
  jardins:{
   CAFE:{DBL:[38995,46034,58192,86987],TPL:[53160,62545,78755,117149],QDL:[67325,79056,99319,147312],ADC:[14165,16511,20564,30162],CHD:[8832,10006,12032,16831]},
@@ -89,7 +89,7 @@ function dailyRate(hotel,meal,payingGuests,season,year=2027,paidChildren712=0){
  if(!row)throw Error('Tarifário não encontrado para o hotel, ano e regime selecionados.');
  const tier=priceTier[season];
  if(tier===undefined)throw Error('Temporada não definida para esta diária.');
- if(row.DBL[tier]===undefined)throw Error('O Eco Towers 2026 não possui tarifa de Super Alta para este período. Consulte outra data ou simule o Jardins.');
+ if(row.DBL[tier]===undefined)throw Error('Não há tarifa cadastrada para esta temporada. Verifique a tabela comercial.');
  if(year===2026&&hotel==='jardins'){
   const regularPaying=payingGuests-paidChildren712;
   const key=regularPaying<=2?'DBL':regularPaying===3?'TPL':'QDL';
@@ -174,7 +174,7 @@ function setYear(year){
  $('#calendarTitle').textContent='Temporadas de '+year;
  $('#footerYear').textContent=String(year);
  $('#tariffRuleHint').textContent=year===2026?
-  'Eco Towers: DBL até 2, TPL 3, QDL 4, QTL 5, ADC acima de 5. Jardins: DBL até 2, TPL 3, QDL 4 e ADC acima de 4; crianças pagantes de 7–12 usam CHD. Eco Towers 2026 não tem tarifa Super Alta.':
+  'Eco Towers: DBL até 2, TPL 3, QDL 4, QTL 5, ADC acima de 5. Jardins: DBL até 2, TPL 3, QDL 4 e ADC acima de 4; crianças pagantes de 7–12 usam CHD. Eco Towers 2026 possui tarifas de Super Alta.':
   'Eco Towers e Jardins: DBL até 2 pagantes, TPL 3, QDL 4, QTL 5; ADC acima de 5. Crianças gratuitas não elevam a faixa tarifária.';
  updateMapChoice();update();
 }

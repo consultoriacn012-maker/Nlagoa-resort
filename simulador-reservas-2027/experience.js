@@ -253,10 +253,10 @@
   function exportXlsx(){
     if(reportTruncated){toast("Relatório incompleto. Reduza o período para exportar todos os dados.",true);return;}
     if(!adminRows.length&&!adminActivity.length){toast("Não há dados para exportar.",true);return;}
-    const daily=[["Data da atividade","Operador","Simulações distintas","Cópias concluídas","PDFs gerados"],
+    const daily=[["Data da atividade","Operador","Simulações realizadas (cliques válidos)","Cópias concluídas","PDFs gerados"],
       ...adminActivity.map(r=>[r.date,r.operator,r.simulations,r.copies,r.pdfs])];
     const byPerson=activityGroups(adminActivity,r=>r.operator).sort((a,b)=>b.simulations-a.simulations);
-    const perPerson=[["Operador","Simulações distintas","Cópias concluídas","PDFs gerados"],
+    const perPerson=[["Operador","Simulações realizadas (cliques válidos)","Cópias concluídas","PDFs gerados"],
       ...byPerson.map(r=>[r.key,r.simulations,r.copies,r.pdfs])];
     const detail=[["Data do orçamento","Operador","Hotel","Check-in","Check-out","Noites","Adultos 13+","Crianças até 12",
       "Regime","Meia pensão","Desconto (%)","Particular (R$)","Desconto (R$)","Ceia (R$)","Conceito total (R$)","Origem","Cliques em Simular","Cópias no período","PDFs no período"],

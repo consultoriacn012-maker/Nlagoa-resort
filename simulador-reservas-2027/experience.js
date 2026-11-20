@@ -259,7 +259,7 @@
     else tariffDirty=false;
   }
   const tariffLabels={CAFE:"Café da manhã",MAP:"Meia Pensão (MAP)",FAP:"Pensão Completa (FAP)",
-    DBL:"SGL/DBL (até 2)",TPL:"TPL (3)",QDL:"QDL (4)",QTL:"QTL (5)",ADC:"ADC — Adicional",CHD:"CHD — Criança",
+    DBL:"SGL/DBL (até 2)",TPL:"TPL (3)",QDL:"QDL (4)",QTL:"QTL (5)",ADC:"ADC — Adicional",
     eco:"Eco Towers",jardins:"Jardins"};
   const tierNames=["BAIXA","MÉDIA","ALTA","SUPER ALTA"];
   const tariffFormat=c=>new Intl.NumberFormat("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2}).format(c/100);

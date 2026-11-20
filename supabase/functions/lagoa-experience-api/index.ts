@@ -274,8 +274,8 @@ Deno.serve(async(req:Request)=>{
         ...(actionsByQuote.get(q.id)||{simulations:0,copies:0,pdfs:0})
       }));
       // Métricas independentes por data da ação (não pela data da cotação).
-      // Simulações: novos orçamentos distintos, inclusive os inicialmente copiados.
-      // Cópias: cada ação de copiar registrada.
+      // Simulações: cada clique bem-sucedido em Simular reserva.
+      // Cópias: cada cópia bem-sucedida registrada, por data real da ação.
       const byDay=new Map<string,{local_date:string,user_id:string,operator_name:string,simulations:number,copies:number,pdfs:number,simulate_clicks:number}>();
       function bucket(date:string,uid:string){
         const key=date+"|"+uid;
@@ -287,12 +287,14 @@ Deno.serve(async(req:Request)=>{
         }
         return item;
       }
-      for(const quote of records.items)bucket(quote.local_date,quote.user_id).simulations++;
+      // Cada clique válido no botão Simular gera um evento 'simulate'.
+      // Orçamentos distintos continuam no cadastro 'experience_quotes', sem
+      // contar múltiplas vezes uma mesma configuração na mesma sessão.
       for(const act of actions.items){
         const b=bucket(act.local_date,act.user_id);
         if(act.event_type==="copy")b.copies++;
         else if(act.event_type==="pdf")b.pdfs++;
-        else if(act.event_type==="simulate")b.simulate_clicks++;
+        else if(act.event_type==="simulate"){b.simulations++;b.simulate_clicks++;}
       }
       const activity=[...byDay.values()].sort((a,b)=>
         a.local_date.localeCompare(b.local_date)||a.operator_name.localeCompare(b.operator_name));

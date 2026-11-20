@@ -477,6 +477,15 @@
   async function boot(){
     showAuth();
     $("expAuthForm").addEventListener("submit",login);
+    $("expOperatorSelect").addEventListener("change",()=>{
+      // Evita reutilizar senha salva/preenchida de outro colaborador.
+      $("expPassword").value="";
+      $("expPassword").type="password";
+      $("expTogglePassword").textContent="Mostrar";
+      $("expTogglePassword").setAttribute("aria-pressed","false");
+      $("expTogglePassword").setAttribute("aria-label","Mostrar senha");
+      $("expAuthError").hidden=true;
+    });
     $("expTogglePassword").addEventListener("click",()=>{
       const field=$("expPassword"),button=$("expTogglePassword");
       const reveal=field.type==="password";

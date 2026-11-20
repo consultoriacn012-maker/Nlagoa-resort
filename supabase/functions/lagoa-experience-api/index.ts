@@ -55,7 +55,21 @@ async function db(path:string,method="GET",payload:unknown=undefined):Promise<an
   return raw?JSON.parse(raw):[];
 }
 function eq(value:string):string{return encodeURIComponent(value);}
-function validUuid(id:string):boolean{return /^[0-9a-f]{8}-[0-9a-f-]{27,}$/i.test(id);}
+function validUuid(id:string):boolean{
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+}
+// O pedido original contém duas grafias da senha inicial:
+// texto "...159753*@" e exemplo "An159753*".
+// A forma armazenada usa o exemplo; aceitamos o @ adicional somente
+// enquanto a conta conserva a senha padrão. Senhas trocadas nunca têm alias.
+function normalizedInitialPassword(user:any,password:string):string{
+  if(!user||user.is_admin||user.must_change_password!==true)return password;
+  const name=String(user.display_name||"");
+  if(name.length<2)return password;
+  const initial=name[0].toLocaleUpperCase("pt-BR")+name[1].toLocaleLowerCase("pt-BR");
+  const alias=initial+"159753*@";
+  return password===alias?initial+"159753*":password;
+}
 function isDate(s:unknown):s is string{
   if(typeof s!=="string"||!/^\d{4}-\d{2}-\d{2}$/.test(s))return false;
   const d=new Date(s+"T12:00:00Z");
@@ -138,13 +152,13 @@ Deno.serve(async(req:Request)=>{
     if(action==="login"){
       const id=String(body.user_id||""),password=String(body.password||"");
       if(!validUuid(id)||!password||password.length>128)return respond({ok:false,error:"Usuário ou senha incorretos."},401,origin);
-      const lookup=await db("experience_users?id=eq."+eq(id)+"&active=eq.true&select=id&limit=1");
+      const lookup=await db("experience_users?id=eq."+eq(id)+"&active=eq.true&select=id,display_name,is_admin,must_change_password&limit=1");
       if(!lookup.length)return respond({ok:false,error:"Usuário ou senha incorretos."},401,origin);
       const after=new Date(Date.now()-15*60*1000).toISOString();
       const failures=await db("experience_login_attempts?user_id=eq."+eq(id)+
         "&succeeded=eq.false&created_at=gte."+eq(after)+"&select=id&limit=8");
       if(failures.length>=7)return respond({ok:false,error:"Muitas tentativas. Aguarde 15 minutos para tentar novamente."},429,origin);
-      const verified=await db("rpc/experience_verify_password","POST",{p_user_id:id,p_password:password});
+      const verified=await db("rpc/experience_verify_password","POST",{p_user_id:id,p_password:normalizedInitialPassword(lookup[0],password)});
       await db("experience_login_attempts","POST",{user_id:id,succeeded:verified.length>0});
       if(!verified.length)return respond({ok:false,error:"Usuário ou senha incorretos."},401,origin);
       const u=verified[0],token=randomToken(),hash=await digest(token);
@@ -199,7 +213,7 @@ Deno.serve(async(req:Request)=>{
       if(next.length<8||next.length>128||next===old)
         return respond({ok:false,error:"Use uma nova senha diferente, de 8 a 128 caracteres."},400,origin);
       const updated=await db("rpc/experience_change_password","POST",
-        {p_user_id:u.id,p_old_password:old,p_new_password:next});
+        {p_user_id:u.id,p_old_password:normalizedInitialPassword(u,old),p_new_password:next});
       if(updated!==true)return respond({ok:false,error:"Senha atual incorreta."},400,origin);
       await db("experience_sessions?user_id=eq."+eq(u.id)+"&token_hash=neq."+u.session_hash,
         "PATCH",{revoked_at:new Date().toISOString()});

@@ -49,6 +49,22 @@ const calendar2027=[
  'AMBBMMBBBBBASSMBBBMMBBBBBMMBBB',
  'BBMMBBBBBMMMMMMMMMAAAAANAAAAASR'
 ];
+// Tarifário Mini Vac 2026, valores em centavos, baixa/média/alta/(super alta quando publicada).
+const tarifas2026={
+ eco:{
+  CAFE:{DBL:[25275,34650,62400],TPL:[38695,48063,82900],QDL:[52115,61475,103400],QTL:[65535,74888,123900],ADC:[13420,13413,20500]},
+  MAP:{DBL:[37375,46750,74500],TPL:[56845,66213,101050],QDL:[76315,85675,127600],QTL:[95785,105138,154150],ADC:[19470,19463,26550]},
+  FAP:{DBL:[49475,58850,86600],TPL:[74995,84363,119200],QDL:[100515,109875,151800],QTL:[126035,135388,184400],ADC:[25520,25513,32600]}
+ },
+ jardins:{
+  CAFE:{DBL:[38995,46034,58192,86987],TPL:[53160,62545,78755,117149],QDL:[67325,79056,99319,147312],ADC:[14165,16511,20564,30162],CHD:[8832,10006,12032,16831]},
+  MAP:{DBL:[49995,57034,69192,97987],TPL:[69660,79045,95255,133649],QDL:[89325,101056,121319,169312],ADC:[19665,22011,26064,35662],CHD:[14332,15506,17532,22331]},
+  FAP:{DBL:[60995,68034,80192,108987],TPL:[86160,95545,111755,150149],QDL:[111325,123056,143319,191312],ADC:[25165,27511,31564,41162],CHD:[19832,21006,23032,27831]}
+ }
+};
+const calendar2026=["SSSAAAAAAAAAAAAAAAAAAAAAAMMMMMM","BBBBBMMBBBBBASSSBBBMMBBBBBBB","BBBBBMMBBBBBMMBBBBBMMBBBBBMMBBB","BBMMBBBBBMMBBBBBMAAABBBMMBBBBM","AABBBBBMMBBBBBMMBBBBBMMBBBBBMMB","BBBAAABBBBBMMBBBBBMMBBBBBMMBBB","MMMMMMMMMAAAAAAAAAAAAAAAAMMMMMM","MBBBBBMMBBBBBMMBBBBBMMBBBBBMMBB","BBBMAABBBBMMBBBBBMMBBBBBMMBBBB","BMMBBBBBMAAAAABMMBBBBBMMBBBBBMA","ABBBBMMBBBBBMMBBBBASSBBBBBMMBB","BBBMMBBBBBMMMMMMMMAAAAANAAAAASR"];
+const tarifarios={2026:tarifas2026,2027:tarifas};
+const calendars={2026:calendar2026,2027:calendar2027};
 const seasonNames={B:'Baixa temporada',M:'Média temporada',A:'Alta temporada',S:'Super alta temporada',N:'Natal • tarifa alta',R:'Réveillon • tarifa super alta'};
 const priceTier={B:0,M:1,A:2,S:3,N:2,R:3};
 const meals={CAFE:'Café da manhã',MAP:'Meia pensão (MAP)',FAP:'Pensão completa (FAP)'};
@@ -58,37 +74,63 @@ const fullDate=s=>new Date(s+'T12:00:00Z').toLocaleDateString('pt-BR',{day:'2-di
 const shortDate=s=>new Date(s+'T12:00:00Z').toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',timeZone:'UTC'});
 const iso=d=>d.toISOString().slice(0,10);
 const $=s=>document.querySelector(s);
-const state={hotel:'eco',month:6,selectionMode:'start',quote:null};
-function seasonFor(s){if(!/^2027-\d\d-\d\d$/.test(s))return null;const [y,m,d]=s.split('-').map(Number);const dt=new Date(Date.UTC(y,m-1,d));if(dt.getUTCFullYear()!==2027||dt.getUTCMonth()!==m-1||dt.getUTCDate()!==d)return null;return calendar2027[m-1]?.[d-1]??null;}
-function datesBetween(start,end){let t=Date.parse(start+'T00:00:00Z');const stop=Date.parse(end+'T00:00:00Z');let list=[];for(;t<stop;t+=86400000){list.push(new Date(t).toISOString().slice(0,10));if(list.length>370)break;}return list;}
-function dailyRate(hotel,meal,guests,season){let key=guests<=2?'DBL':guests===3?'TPL':guests===4?'QDL':'QTL';let data=tarifas[hotel][meal];let tier=priceTier[season];return data[key][tier]+Math.max(0,guests-5)*data.ADC[tier];}
-const FREE_CHILD_LIMIT=2;
-function occupancy(adults,children,childrenOver12=0){
- const freeChildren=Math.min(children,FREE_CHILD_LIMIT);
- const payingChildren=children-freeChildren+childrenOver12;
- const guests=adults+children+childrenOver12;
- const payingGuests=adults+payingChildren;
- return {guests,payingGuests,freeChildren,payingChildren,children:children+childrenOver12,childrenUnder12:children,childrenOver12};
+const state={hotel:'eco',year:2027,month:6,selectionMode:'start',quote:null};
+function seasonFor(s){
+ if(!/^202[67]-\d\d-\d\d$/.test(s))return null;
+ const [y,m,d]=s.split('-').map(Number),dt=new Date(Date.UTC(y,m-1,d));
+ if(dt.getUTCFullYear()!==y||dt.getUTCMonth()!==m-1||dt.getUTCDate()!==d)return null;
+ return calendars[y]?.[m-1]?.[d-1]??null;
 }
-function quoteFor(hotel,meal,guests,start,end,discount,adults=guests,children=0,mapChoice='almoco',childrenOver12=0){
- const occ=occupancy(adults,children,childrenOver12);
- const dates=datesBetween(start,end),days=dates.map(d=>{const season=seasonFor(d);return {date:d,season,rate:dailyRate(hotel,meal,occ.payingGuests,season)};});
+function datesBetween(start,end){let t=Date.parse(start+'T00:00:00Z');const stop=Date.parse(end+'T00:00:00Z');let list=[];for(;t<stop;t+=86400000){list.push(new Date(t).toISOString().slice(0,10));if(list.length>370)break;}return list;}
+function dailyRate(hotel,meal,payingGuests,season,year=2027,paidChildren712=0){
+ const row=tarifarios[year]?.[hotel]?.[meal];
+ if(!row)throw Error('Tarifário não encontrado para o hotel, ano e regime selecionados.');
+ const tier=priceTier[season];
+ if(tier===undefined)throw Error('Temporada não definida para esta diária.');
+ if(row.DBL[tier]===undefined)throw Error('O Eco Towers 2026 não possui tarifa de Super Alta para este período. Consulte outra data ou simule o Jardins.');
+ if(year===2026&&hotel==='jardins'){
+  const regularPaying=payingGuests-paidChildren712;
+  const key=regularPaying<=2?'DBL':regularPaying===3?'TPL':'QDL';
+  return row[key][tier]+Math.max(0,regularPaying-4)*row.ADC[tier]+paidChildren712*row.CHD[tier];
+ }
+ const key=payingGuests<=2?'DBL':payingGuests===3?'TPL':payingGuests===4?'QDL':'QTL';
+ return row[key][tier]+Math.max(0,payingGuests-5)*row.ADC[tier];
+}
+const FREE_CHILD_LIMIT=2;
+function occupancy(adults,children,childrenOver12=0,children712=0){
+ const free06=Math.min(children,FREE_CHILD_LIMIT),free712=Math.min(children712,FREE_CHILD_LIMIT-free06);
+ const freeChildren=free06+free712,paidChildren06=children-free06,paidChildren712=children712-free712;
+ const payingChildren=paidChildren06+paidChildren712+childrenOver12;
+ return {guests:adults+children+children712+childrenOver12,payingGuests:adults+payingChildren,
+ freeChildren,payingChildren,paidChildren06,paidChildren712,children:children+children712+childrenOver12,
+ childrenUnder12:children,children712,childrenOver12};
+}
+function quoteFor(hotel,meal,guests,start,end,discount,adults=guests,children=0,mapChoice='almoco',childrenOver12=0,children712=0){
+ const occ=occupancy(adults,children,childrenOver12,children712),year=Number(start.slice(0,4));
+ if(![2026,2027].includes(year)||end<=start||end>String(year+1)+'-01-01')throw Error('Escolha uma hospedagem com todas as diárias dentro de 2026 ou de 2027.');
+ if(!Number.isFinite(discount)||discount<0||discount>100)throw Error('O desconto deve estar entre 0% e 100%.');
+ const dates=datesBetween(start,end);
+ const days=dates.map(d=>{
+  const season=seasonFor(d);
+  if(!season)throw Error('Não foi encontrada temporada para '+d+'.');
+  return {date:d,season,rate:dailyRate(hotel,meal,occ.payingGuests,season,year,occ.paidChildren712)};
+ });
  const total=days.reduce((sum,day)=>sum+day.rate,0),discountCents=Math.round(total*discount/100);
- return {hotel,meal,...occ,mapChoice,start,end,discount,days,total,discountCents,net:total-discountCents,parkEconomy:adults*dates.length*15990};
+ return {hotel,meal,...occ,mapChoice,year,start,end,discount,days,total,discountCents,net:total-discountCents,parkEconomy:adults*dates.length*15990};
 }
 function readForm(){
  const hotel=state.hotel,meal=$('#meal').value,start=$('#checkin').value,end=$('#checkout').value;
- const adults=Number($('#adults').value),children=Number($('#children').value),childrenOver12=Number($('#childrenOver12').value);
- const guests=adults+children+childrenOver12;
+ const adults=Number($('#adults').value),children=Number($('#children').value),children712=Number($('#children712').value),childrenOver12=Number($('#childrenOver12').value);
+ const guests=adults+children+children712+childrenOver12,year=state.year;
  const discount=Number($('#discount').value.replace(',','.')),mapChoice=$('#mapChoice').value;
  if(!Number.isInteger(adults)||adults<1||adults>30)throw Error('Informe uma quantidade de adultos entre 1 e 30.');
- if(!Number.isInteger(children)||children<0||children>29)throw Error('Informe a quantidade de crianças de até 12 anos.');
+ if(!Number.isInteger(children)||children<0||children>29||!Number.isInteger(children712)||children712<0||children712>29)throw Error('Informe as crianças nas respectivas faixas etárias.');
  if(!Number.isInteger(childrenOver12)||childrenOver12<0||childrenOver12>29||guests>30)throw Error('Informe no máximo 30 hóspedes no total, contando adultos e crianças.');
- if(!start||!end||start<'2027-01-01'||start>'2027-12-31'||end<='2027-01-01'||end>'2028-01-01'||end<=start)throw Error('Escolha um período válido de 2027. O check-out pode ser até 01/01/2028.');
+ if(!start||!end||start<year+'-01-01'||start>year+'-12-31'||end<=(year)+'-01-01'||end>(year+1)+'-01-01'||end<=start)throw Error('Escolha datas válidas de '+year+'. O check-out pode ser até 01/01/'+(year+1)+'.');
  if(!Number.isFinite(discount)||discount<0||discount>100)throw Error('O desconto deve estar entre 0% e 100%.');
- if(!tarifas[hotel]?.[meal])throw Error('Regime de alimentação não identificado.');
- if(!['almoco','jantar'].includes(mapChoice))throw Error('Selecione almoço ou jantar para a meia pensão.');
- return {hotel,meal,guests,start,end,discount,adults,children,mapChoice,childrenOver12};
+ if(!tarifarios[year]?.[hotel]?.[meal])throw Error('Tarifário não encontrado.');
+ if(!['almoco','jantar'].includes(mapChoice))throw Error('Selecione uma opção de meia pensão.');
+ return {hotel,meal,guests,start,end,discount,adults,children,mapChoice,childrenOver12,children712};
 }
 function buildGroups(days){let out=[];for(const day of days){let last=out[out.length-1];if(last&&last.season===day.season&&last.rate===day.rate){last.count++;last.end=iso(new Date(Date.parse(day.date+'T00:00:00Z')+86400000));last.total+=day.rate;}else{out.push({season:day.season,start:day.date,end:iso(new Date(Date.parse(day.date+'T00:00:00Z')+86400000)),count:1,rate:day.rate,total:day.rate});}}return out;}
 function getSeasonCount(days){const a={};for(const x of days)a[x.season]=(a[x.season]||0)+1;return a;}

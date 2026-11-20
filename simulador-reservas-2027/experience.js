@@ -5,6 +5,7 @@
   const $=id=>document.getElementById(id);
   let token=sessionStorage.getItem(STORAGE_KEY)||"";
   let currentUser=null,adminRows=[],knownOperators=[],sessionQuotes=0,toastTimer=null;
+  let tariffRows=[],tariffLastJson='',tariffSnapshot=null,tariffDirty=false,tariffSyncAt=0;
   const fmtMoney=c=>new Intl.NumberFormat("pt-BR",{style:"currency",currency:"BRL"}).format((Number(c)||0)/100);
   const fmtDate=d=>d?String(d).split("-").reverse().join("/"):"—";
   const today=()=>new Intl.DateTimeFormat("sv-SE",{timeZone:"America/Sao_Paulo",year:"numeric",month:"2-digit",day:"2-digit"}).format(new Date());
@@ -45,7 +46,7 @@
     $("experienceAuth").hidden=true;$("experienceToolbar").hidden=true;$("experienceAdmin").hidden=false;
     $("expAdminWelcome").textContent="Acesso gerencial · "+user.display_name;
     $("expDateStart").value=today();$("expDateEnd").value=today();
-    refreshAdmin();
+    setAdminTab("reports");refreshAdmin();
   }
   async function loadPeople(){
     const result=await request("operators",{},"");
@@ -70,6 +71,7 @@
       const result=await request("login",{user_id:id,password},"");
       token=result.token;currentUser=result.user;sessionStorage.setItem(STORAGE_KEY,token);
       sessionQuotes=0;
+      await syncTariffs();
       if(currentUser.is_admin)showAdmin(currentUser);else showOperator(currentUser);
       if(currentUser.must_change_password)toast("Senha padrão em uso. Recomenda-se alterá-la no menu Alterar senha.");
     }catch(err){$("expAuthError").textContent=err.message;$("expAuthError").hidden=false;}
@@ -226,6 +228,171 @@
     document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),60000);
     toast("Excel gerado com resumo diário, operadores e orçamentos detalhados.");
   }
+
+  // Consulta a base compartilhada antes de liberar os preços do simulador.
+  async function syncTariffs(silent=false){
+    if(!token)throw new Error("Entre na plataforma para consultar os tarifários.");
+    if(!window.lagoaTariffAPI)throw new Error("O motor de tarifários não está disponível.");
+    const result=await request("tariffs");
+    if(!Array.isArray(result.rows))throw new Error("O servidor não devolveu os preços publicados.");
+    const fresh=JSON.stringify(result.rows);
+    if(fresh!==tariffLastJson){
+      tariffRows=result.rows;
+      window.lagoaTariffAPI.applyPublishedTariffs(tariffRows);
+      tariffLastJson=fresh;
+      if(silent&&currentUser&&!currentUser.is_admin&&tariffSyncAt>0)
+        toast("Os tarifários foram atualizados. Confira os valores recalculados antes de enviar o orçamento.");
+    }
+    tariffSyncAt=Date.now();
+    return tariffRows;
+  }
+  function setAdminTab(tab){
+    const isTariff=tab==="tariffs";
+    if(!isTariff&&tariffDirty&&!confirm("Existem valores não salvos. Deseja sair sem salvar?"))return;
+    $("expReportsPane").hidden=isTariff;
+    $("expTariffsPane").hidden=!isTariff;
+    $("expTabReports").classList.toggle("active",!isTariff);
+    $("expTabTariffs").classList.toggle("active",isTariff);
+    $("expTabReports").setAttribute("aria-selected",String(!isTariff));
+    $("expTabTariffs").setAttribute("aria-selected",String(isTariff));
+    if(isTariff){renderTariffEditor();refreshTariffHistory();}
+    else tariffDirty=false;
+  }
+  const tariffLabels={CAFE:"Café da manhã",MAP:"Meia Pensão (MAP)",FAP:"Pensão Completa (FAP)",
+    DBL:"SGL/DBL (até 2)",TPL:"TPL (3)",QDL:"QDL (4)",QTL:"QTL (5)",ADC:"ADC — Adicional",CHD:"CHD — Criança",
+    eco:"Eco Towers",jardins:"Jardins"};
+  const tierNames=["BAIXA","MÉDIA","ALTA","SUPER ALTA"];
+  const tariffFormat=c=>new Intl.NumberFormat("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2}).format(c/100);
+  function parseTariffPrice(value){
+    let v=String(value??"").trim().replace(/\s/g,"");
+    if(/^\d{1,3}(?:\.\d{3})+(?:,\d{1,2})?$/.test(v))v=v.replace(/\./g,"").replace(",",".");
+    else if(/^\d+(?:[,\.]\d{1,2})?$/.test(v))v=v.replace(",",".");
+    else throw new Error("Formato inválido. Exemplo: 501,75.");
+    const [reais,centavos=""]=v.split(".");
+    const cents=Number(reais)*100+Number(centavos.padEnd(2,"0"));
+    if(!Number.isSafeInteger(cents)||cents<=0||cents>100000000)
+      throw new Error("O valor precisa ser maior que zero e respeitar o limite permitido.");
+    return cents;
+  }
+  function tariffInputNodes(){
+    return Array.from($("expTariffEditor").querySelectorAll("input[data-tariff-room]"));
+  }
+  function tariffDiff(){
+    const changed=[];
+    for(const input of tariffInputNodes()){
+      const key=input.dataset.tariffRoom,tier=Number(input.dataset.tariffTier);
+      const meal=input.dataset.tariffMeal,year=Number($("expTariffYear").value),hotel=$("expTariffHotel").value;
+      const cents=parseTariffPrice(input.value);
+      const original=tariffSnapshot?.[year]?.[hotel]?.[meal]?.[key]?.[tier];
+      if(original===undefined)throw new Error("Categoria de tarifário não cadastrada.");
+      input.classList.toggle("dirty",cents!==original);
+      input.classList.remove("invalid");
+      if(cents!==original)changed.push({year,hotel,meal,room:key,tier,price_cents:cents});
+    }
+    return changed;
+  }
+  function onTariffInput(){
+    try{
+      const diff=tariffDiff();
+      tariffDirty=diff.length>0;
+      $("expTariffSave").disabled=!tariffDirty;
+      $("expTariffStatus").classList.remove("error");
+      $("expTariffStatus").textContent=diff.length>0?
+        diff.length+" preço(s) alterado(s). Clique em Salvar alterações para publicar a todos os operadores.":
+        "Tarifas carregadas. Nenhuma alteração pendente.";
+    }catch(err){
+      tariffDirty=true;
+      $("expTariffSave").disabled=true;
+      $("expTariffStatus").classList.add("error");
+      $("expTariffStatus").textContent="Verifique os valores inseridos: "+err.message;
+    }
+  }
+  function renderTariffEditor(){
+    if(!currentUser?.is_admin)return;
+    const matrix=window.lagoaTariffAPI?.getCurrent();
+    if(!matrix){$("expTariffStatus").textContent="Não foi possível carregar o motor tarifário.";return;}
+    const year=Number($("expTariffYear").value),hotel=$("expTariffHotel").value;
+    const hotelPrices=matrix?.[year]?.[hotel];
+    if(!hotelPrices){$("expTariffStatus").textContent="Tarifário não encontrado.";return;}
+    tariffSnapshot=matrix;
+    tariffDirty=false;
+    $("expTariffSave").disabled=true;
+    const html=[];
+    for(const meal of ["CAFE","MAP","FAP"]){
+      const rows=hotelPrices[meal];
+      html.push('<section class="exp-tariff-section"><h3>'+tariffLabels[meal]+
+        ' <small style="font-weight:normal">• valores por diária em R$</small></h3><div class="exp-tariff-table-wrap">'+
+        '<table class="exp-tariff-table"><thead><tr><th>Categoria</th>'+
+        tierNames.map(name=>'<th>'+name+'</th>').join("")+'</tr></thead><tbody>');
+      for(const [room,prices] of Object.entries(rows)){
+        html.push('<tr><th>'+tariffLabels[room]+'</th>');
+        for(let tier=0;tier<4;tier++){
+          const price=prices[tier],incomplete=year===2026&&hotel==="eco"&&tier===3;
+          html.push('<td><input class="exp-tariff-input" type="text" inputmode="decimal" spellcheck="false" autocomplete="off" '+
+            'data-tariff-meal="'+meal+'" data-tariff-room="'+room+'" data-tariff-tier="'+tier+'" '+
+            'aria-label="'+meal+' '+room+' '+tierNames[tier]+'" value="'+tariffFormat(price)+'">'+
+            (incomplete?'<small class="exp-tariff-cell-note">Super Alta: confirmar</small>':'')+'</td>');
+        }
+        html.push('</tr>');
+      }
+      html.push('</tbody></table></div></section>');
+    }
+    $("expTariffEditor").innerHTML=html.join("");
+    tariffInputNodes().forEach(input=>input.addEventListener("input",onTariffInput));
+    const note=year===2026&&hotel==="eco"?
+      "Eco Towers 2026: valores de Baixa, Média e Alta atualizados conforme tabela Pública/Comissionada. Coluna Super Alta mantida do tarifário anterior, pois a imagem enviada estava incompleta.":
+      "Os valores exibidos são os preços atualmente considerados pelo simulador. Altere apenas com base no novo tarifário oficial.";
+    $("expTariffStatus").classList.remove("error");
+    $("expTariffStatus").textContent=note;
+  }
+  function switchTariffGroup(element,previous){
+    if(tariffDirty&&!confirm("Há preços não salvos. Deseja descartar as alterações?")){
+      element.value=previous;return previous;
+    }
+    renderTariffEditor();return element.value;
+  }
+  async function saveTariffEditor(){
+    if(!currentUser?.is_admin)return;
+    let changes;
+    try{changes=tariffDiff();}catch(err){toast(err.message,true);return;}
+    if(!changes.length){toast("Nenhum preço foi alterado.");return;}
+    $("expTariffSave").disabled=true;
+    $("expTariffStatus").textContent="Salvando alterações na base central...";
+    try{
+      const response=await request("tariffs_save",{changes});
+      await syncTariffs();
+      renderTariffEditor();
+      await refreshTariffHistory();
+      toast(response.updated+" preço(s) atualizado(s) com sucesso. Todos os operadores receberão o novo tarifário.");
+    }catch(err){
+      $("expTariffSave").disabled=false;
+      $("expTariffStatus").classList.add("error");
+      $("expTariffStatus").textContent="Não foi possível salvar: "+err.message;
+      toast("Falha ao salvar preços: "+err.message,true);
+    }
+  }
+  async function refreshTariffEditor(){
+    if(tariffDirty&&!confirm("Há alterações pendentes. Deseja descartá-las e recarregar as tarifas do servidor?"))return;
+    try{await syncTariffs();renderTariffEditor();toast("Tabela atualizada com os preços publicados.");}
+    catch(err){toast("Não foi possível consultar os tarifários: "+err.message,true);}
+  }
+  async function refreshTariffHistory(){
+    if(!currentUser?.is_admin)return;
+    const tbody=$("expTariffHistory");
+    tbody.innerHTML='<tr><td colspan="8" class="exp-loading">Carregando histórico...</td></tr>';
+    try{
+      const result=await request("tariffs_history");
+      const rows=result.rows||[];
+      tbody.innerHTML=rows.length?rows.map(r=>'<tr><td>'+
+        new Date(r.changed_at).toLocaleString("pt-BR",{timeZone:"America/Sao_Paulo"})+'</td><td>'+
+        escapeHtml(r.operator_name)+'</td><td>'+escapeHtml(r.year+' / '+(tariffLabels[r.hotel]||r.hotel))+
+        '</td><td>'+escapeHtml(r.meal)+'</td><td>'+escapeHtml(r.room)+'</td><td>'+
+        escapeHtml(tierNames[r.tier])+'</td><td>'+
+        (r.previous_override_cents===null?'—':fmtMoney(r.previous_override_cents))+'</td><td>'+
+        fmtMoney(r.price_cents)+'</td></tr>').join(""):
+        '<tr><td colspan="8" class="exp-loading">Nenhuma alteração registrada ainda.</td></tr>';
+    }catch(err){tbody.innerHTML='<tr><td colspan="8" class="exp-loading">'+escapeHtml(err.message)+'</td></tr>';}
+  }
   function openPasswordDialog(){
     $("expPasswordDialog").showModal();$("expCurrentPassword").value="";$("expNewPassword").value="";
     $("expNewPasswordConfirm").value="";$("expPasswordError").hidden=true;
@@ -246,6 +413,26 @@
     $("expAdminLogout").addEventListener("click",logout);
     $("expApplyFilters").addEventListener("click",refreshAdmin);
     $("expDownloadExcel").addEventListener("click",exportXlsx);
+    $("expTabReports").addEventListener("click",()=>setAdminTab("reports"));
+    $("expTabTariffs").addEventListener("click",()=>setAdminTab("tariffs"));
+    $("expTariffReload").addEventListener("click",refreshTariffEditor);
+    $("expTariffSave").addEventListener("click",saveTariffEditor);
+    $("expTariffHistoryReload").addEventListener("click",refreshTariffHistory);
+    let previousYear=$("expTariffYear").value,previousHotel=$("expTariffHotel").value;
+    $("expTariffYear").addEventListener("change",()=>{
+      previousYear=switchTariffGroup($("expTariffYear"),previousYear);
+    });
+    $("expTariffHotel").addEventListener("change",()=>{
+      previousHotel=switchTariffGroup($("expTariffHotel"),previousHotel);
+    });
+    document.addEventListener("visibilitychange",()=>{
+      if(!document.hidden&&currentUser&&!currentUser.is_admin)
+        syncTariffs(true).catch(err=>toast("Não foi possível verificar o tarifário atualizado: "+err.message,true));
+    });
+    setInterval(()=>{
+      if(currentUser&&!currentUser.is_admin)
+        syncTariffs(true).catch(err=>toast("Falha ao sincronizar o tarifário: "+err.message,true));
+    },120000);
     $("expPasswordForm").addEventListener("submit",changePassword);
     $("expChangePassword").addEventListener("click",openPasswordDialog);
     $("expAdminPassword").addEventListener("click",openPasswordDialog);
@@ -262,6 +449,7 @@
       if(token){
         try{const me=await request("me");currentUser=me.user;
           sessionQuotes=Number(me.session_quotes)||0;
+          await syncTariffs();
           if(currentUser.is_admin)showAdmin(currentUser);else showOperator(currentUser);
           if(currentUser.must_change_password)toast("Senha padrão em uso. Recomenda-se alterá-la.");
         }catch{token="";sessionStorage.removeItem(STORAGE_KEY);showAuth();}

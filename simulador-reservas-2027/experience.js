@@ -5,7 +5,7 @@
   const $=id=>document.getElementById(id);
   let token=sessionStorage.getItem(STORAGE_KEY)||"";
   let currentUser=null,adminRows=[],adminActivity=[],knownOperators=[],sessionQuotes=0,toastTimer=null;
-  let simulateTimer=null,lastSimSignature='',reportTruncated=false;
+  let reportTruncated=false;
   let tariffRows=[],tariffLastJson='',tariffSnapshot=null,tariffDirty=false,tariffSyncAt=0;
   const fmtMoney=c=>new Intl.NumberFormat("pt-BR",{style:"currency",currency:"BRL"}).format((Number(c)||0)/100);
   const fmtDate=d=>d?String(d).split("-").reverse().join("/"):"—";
@@ -74,7 +74,7 @@
     try{
       const result=await request("login",{user_id:id,password},"");
       token=result.token;currentUser=result.user;sessionStorage.setItem(STORAGE_KEY,token);
-      sessionQuotes=0;lastSimSignature="";clearTimeout(simulateTimer);
+      sessionQuotes=0;
       $("expLoginBtn").textContent="Carregando tarifários...";
       try{
         await syncTariffs();
@@ -95,7 +95,7 @@
     finally{$("expLoginBtn").disabled=false;$("expLoginBtn").textContent="Entrar na plataforma";}
   }
   async function logout(){
-    const old=token;token="";currentUser=null;lastSimSignature="";clearTimeout(simulateTimer);sessionStorage.removeItem(STORAGE_KEY);
+    const old=token;token="";currentUser=null;sessionStorage.removeItem(STORAGE_KEY);
     const reset=$("resetBtn");
     if(reset&&typeof reset.click==="function")reset.click();
     showAuth();
@@ -120,26 +120,10 @@
       if(!silent)toast(reply.created?"Novo orçamento contabilizado.":"Ação registrada, sem duplicar o orçamento.");
     }catch(err){toast("O registro de produtividade não foi salvo: "+err.message,true);}
   }
-  function quoteFingerprint(quote){
-    return JSON.stringify(quoteData(quote));
-  }
-  function queueSimulation(quote){
-    clearTimeout(simulateTimer);
-    if(!currentUser||currentUser.is_admin||!quote)return;
-    const signature=quoteFingerprint(quote);
-    if(signature===lastSimSignature)return;
-    simulateTimer=setTimeout(()=>{
-      if(!currentUser||currentUser.is_admin||
-         !state.quote||quoteFingerprint(state.quote)!==signature)return;
-      lastSimSignature=signature;
-      record("simulate",quote,true);
-    },1400);
-  }
+  // Só o botão Simular registra uma simulação válida. Cópias e PDFs são
+  // contabilizados separadamente após a conclusão da ação.
   function completedAction(type,quote){
     if(!currentUser||currentUser.is_admin||!quote)return;
-    // A cópia ou PDF já prova que o orçamento foi gerado.
-    clearTimeout(simulateTimer);
-    lastSimSignature=quoteFingerprint(quote);
     record(type,quote,true);
   }
   function setKpi(id,value){$(id).textContent=value;}
@@ -525,14 +509,9 @@
     document.querySelectorAll("[data-exp-period]").forEach(b=>b.addEventListener("click",()=>{
       const n=Number(b.dataset.expPeriod);$("expDateStart").value=daysAgo(n-1);$("expDateEnd").value=today();refreshAdmin();
     }));
-    // Só ações explícitas geram registros; recalcular ao digitar não conta orçamento.
-    $("refreshBtn")?.addEventListener("click",()=>{
-      if(!currentUser||currentUser.is_admin||!state.quote)return;
-      clearTimeout(simulateTimer);
-      lastSimSignature=quoteFingerprint(state.quote);
-      record("simulate",state.quote,true);
-    });
-    window.addEventListener("lagoa:quote-changed",event=>queueSimulation(event.detail?.quote||null));
+    // Simulação: disparada apenas após clique e cálculo válido no motor.
+    // Alterações nos campos NÃO geram evento de produtividade.
+    window.addEventListener("lagoa:quote-simulated",event=>completedAction("simulate",event.detail?.quote));
     window.addEventListener("lagoa:quote-copied",event=>completedAction("copy",event.detail?.quote));
     window.addEventListener("lagoa:quote-pdf",event=>completedAction("pdf",event.detail?.quote));
     try{

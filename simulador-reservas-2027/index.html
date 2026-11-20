@@ -136,20 +136,44 @@ function occupancy(adults,children,childrenOver12=0,children712=0,children12=0){
  const payingChildren=paidChildren06+paidChildren712+childrenOver12;
  return {guests:adults+children+children712+children12+childrenOver12,payingGuests:adults+payingChildren,freeChildren,payingChildren,paidChildren06,paidChildren712,children:children+children712+children12+childrenOver12,childrenUnder12:children,children712,children12,childrenOver12};
 }
+// Usa a ordem exibida no formulário: primeiras duas crianças até 12 anos são free.
+function occupancyFromSelectedAges(adults,ages){
+ if(!Array.isArray(ages)||ages.some(a=>!['0-6','7-11','12','13+'].includes(a)))
+  throw Error('Informe a faixa etária de todas as crianças.');
+ let freeLeft=FREE_CHILD_LIMIT,freeChildren=0,payingChildren=0,paidChildren06=0,paidChildren712=0;
+ let childrenUnder12=0,children712=0,children12=0,childrenOver12=0;
+ const childStatuses=ages.map(age=>{
+  if(age==='0-6')childrenUnder12++;
+  else if(age==='7-11')children712++;
+  else if(age==='12')children12++;
+  else childrenOver12++;
+  if(age!=='13+'&&freeLeft>0){freeLeft--;freeChildren++;return 'free';}
+  payingChildren++;
+  if(age==='0-6')paidChildren06++;
+  if(age==='7-11'||age==='12')paidChildren712++;
+  return 'paid';
+ });
+ return {guests:adults+ages.length,payingGuests:adults+payingChildren,freeChildren,payingChildren,
+  paidChildren06,paidChildren712,children:ages.length,childrenUnder12,children712,children12,childrenOver12,
+  orderedChildAges:[...ages],childStatuses};
+}
 function mandatoryCeia(dates,year,adults,children06,children711,children12,childrenOver12){
  const selected=year===2026?dates.filter(d=>d==='2026-12-24'||d==='2026-12-31'):[];
  const fullPaying=adults+children12+childrenOver12,halfPaying=children711,unit=fullPaying*45000+halfPaying*22500;
  const events=selected.map(date=>({date,label:date==='2026-12-24'?'Ceia de Natal':'Ceia de Réveillon',fullPaying,halfPaying,total:unit}));
  return {events,total:unit*events.length,fullPaying,halfPaying,childrenFree:children06};
 }
-function quoteFor(hotel,meal,guests,start,end,discount,adults=guests,children=0,mapChoice='almoco',childrenOver12=0,children712=0,children12=0){
- const occ=occupancy(adults,children,childrenOver12,children712,children12),year=Number(start.slice(0,4));
+function quoteFor(hotel,meal,guests,start,end,discount,adults=guests,children=0,mapChoice='almoco',childrenOver12=0,children712=0,children12=0,orderedChildAges=null){
+ const occ=Array.isArray(orderedChildAges)
+  ?occupancyFromSelectedAges(adults,orderedChildAges)
+  :occupancy(adults,children,childrenOver12,children712,children12);
+ const year=Number(start.slice(0,4));
  if(![2026,2027].includes(year)||end<=start||end>String(year+1)+'-01-01')throw Error('Escolha uma hospedagem com todas as diárias dentro de 2026 ou de 2027.');
  if(!Number.isFinite(discount)||discount<0||discount>100)throw Error('O desconto deve estar entre 0% e 100%.');
  const dates=datesBetween(start,end);
  const days=dates.map(d=>{const season=seasonFor(d);if(!season)throw Error('Não foi encontrada temporada para '+d+'.');return {date:d,season,rate:dailyRate(hotel,meal,occ.payingGuests,season,year,occ.paidChildren712)};});
  const total=days.reduce((sum,day)=>sum+day.rate,0),discountCents=Math.round(total*discount/100),net=total-discountCents;
- const ceia=mandatoryCeia(dates,year,adults,children,children712,children12,childrenOver12);
+ const ceia=mandatoryCeia(dates,year,adults,occ.childrenUnder12,occ.children712,occ.children12,occ.childrenOver12);
  return {hotel,meal,...occ,mapChoice,year,start,end,discount,days,total,discountCents,net,ceia,ceiaTotal:ceia.total,totalWithCeia:total+ceia.total,netWithCeia:net+ceia.total,parkEconomy:adults*dates.length*15990};
 }
 let childAges=[];
@@ -452,5 +476,5 @@ function init(){
 }
 if(typeof document!=='undefined')document.addEventListener('DOMContentLoaded',init);
 // Expose pure helpers for automated correctness checks.
-if(typeof module!=='undefined')module.exports={tarifas,tarifas2026,tarifarios,calendar2027,calendar2026,seasonFor,dailyRate,quoteFor,occupancy,mandatoryCeia,FREE_CHILD_LIMIT,priceTier,buildGroups,quoteText,installmentPlan,includedMeals};
+if(typeof module!=='undefined')module.exports={tarifas,tarifas2026,tarifarios,calendar2027,calendar2026,seasonFor,dailyRate,quoteFor,occupancy,occupancyFromSelectedAges,mandatoryCeia,FREE_CHILD_LIMIT,priceTier,buildGroups,quoteText,installmentPlan,includedMeals};
 </script></body></html>

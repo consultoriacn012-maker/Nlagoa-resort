@@ -174,7 +174,7 @@ Deno.serve(async(req:Request)=>{
         if(!raw||typeof raw!=="object"||!Number.isInteger(raw.year)||!Number.isInteger(raw.tier)||
            !Number.isSafeInteger(raw.price_cents)||raw.price_cents<1||raw.price_cents>100000000||
            !["eco","jardins"].includes(raw.hotel)||!["CAFE","MAP","FAP"].includes(raw.meal)||
-           !["DBL","TPL","QDL","QTL","ADC","CHD"].includes(raw.room))
+           !["DBL","TPL","QDL","QTL","ADC"].includes(raw.room))
              throw new Error("Há valores de tarifário inválidos.");
         return {year:raw.year,hotel:raw.hotel,meal:raw.meal,room:raw.room,
                 tier:raw.tier,price_cents:raw.price_cents};

@@ -92,13 +92,18 @@
 <section class="exp-admin-screen" id="experienceAdmin" hidden aria-label="Painel administrativo Lagoa Experience">
   <div class="exp-admin-head">
     <div class="exp-admin-brand"><span class="exp-auth-symbol">L</span>
-      <div><h1>Produtividade | Lagoa Experience</h1><p id="expAdminWelcome">Painel de administração</p></div>
+      <div><h1>Painel Administrativo | Lagoa Experience</h1><p id="expAdminWelcome">Painel de administração</p></div>
     </div>
     <div class="exp-admin-actions">
       <button class="exp-outline" id="expAdminPassword" type="button">Alterar senha</button>
       <button class="exp-outline" id="expAdminLogout" type="button">Sair da administração</button>
     </div>
   </div>
+  <div class="exp-admin-tabs" role="tablist" aria-label="Áreas administrativas">
+    <button type="button" id="expTabReports" class="exp-admin-tab active" role="tab" aria-selected="true">📊 Produtividade</button>
+    <button type="button" id="expTabTariffs" class="exp-admin-tab" role="tab" aria-selected="false">💲 Gestão de Tarifários</button>
+  </div>
+  <div id="expReportsPane" role="tabpanel">
   <div class="exp-panel">
     <h2>Filtrar resultados</h2>
     <div class="exp-filter-grid">
@@ -138,6 +143,26 @@
     </div>
   </section>
   <p class="exp-muted">Dados registrados no horário de Brasília (America/Sao_Paulo). O dashboard apresenta atividade comercial, não confirma reservas nem vendas.</p>
+
+  </div>
+  <section id="expTariffsPane" role="tabpanel" hidden>
+    <div class="exp-panel">
+      <div class="exp-table-head"><div><h2 style="margin-bottom:5px">Gestão de Tarifários</h2><p class="exp-muted" style="margin:0">Altere os preços por hotel, ano, pensão, categoria de apartamento e temporada. Todas as alterações são salvas no banco e aplicadas aos operadores.</p></div></div>
+      <div class="exp-tariff-toolbar">
+        <div class="exp-field"><label for="expTariffYear">Ano</label><select id="expTariffYear" class="exp-select"><option value="2026">2026</option><option value="2027">2027</option></select></div>
+        <div class="exp-field"><label for="expTariffHotel">Hotel</label><select id="expTariffHotel" class="exp-select"><option value="eco">Eco Towers</option><option value="jardins">Lagoa Jardins</option></select></div>
+        <button type="button" id="expTariffReload" class="exp-outline">Atualizar tabela</button>
+        <button type="button" id="expTariffSave" class="exp-primary" disabled>Salvar alterações</button>
+      </div>
+      <p class="exp-tariff-status" id="expTariffStatus" role="status">Carregando tarifas...</p>
+      <div class="exp-tariff-editor" id="expTariffEditor"></div>
+      <p class="exp-muted" style="margin-top:14px">Valores em reais por diária. As temporadas Natal e Réveillon seguem, respectivamente, Alta e Super Alta. As regras de crianças e os adicionais de ceia continuam independentes da tabela. Altere apenas valores confirmados pelo tarifário oficial.</p>
+    </div>
+    <div class="exp-panel">
+      <div class="exp-table-head"><h2>Histórico de alterações</h2><button type="button" class="exp-outline" id="expTariffHistoryReload">Atualizar histórico</button></div>
+      <div class="exp-table-scroll"><table class="exp-table"><thead><tr><th>Data e hora</th><th>Responsável</th><th>Ano / Hotel</th><th>Regime</th><th>Categoria</th><th>Temporada</th><th>Anterior</th><th>Novo</th></tr></thead><tbody id="expTariffHistory"><tr><td colspan="8" class="exp-loading">Nenhuma alteração registrada ainda.</td></tr></tbody></table></div>
+    </div>
+  </section>
 </section>
 <div class="exp-toast" id="expToast" role="status" hidden></div>
 <dialog id="expPasswordDialog" class="exp-password-dialog">
@@ -204,6 +229,33 @@ const tarifas2026={
 };
 const calendar2026=["SSSAAAAAAAAAAAAAAAAAAAAAAMMMMMM","BBBBBMMBBBBBASSSBBBMMBBBBBBB","BBBBBMMBBBBBMMBBBBBMMBBBBBMMBBB","BBMMBBBBBMMBBBBBMAAABBBMMBBBBM","AABBBBBMMBBBBBMMBBBBBMMBBBBBMMB","BBBAAABBBBBMMBBBBBMMBBBBBMMBBB","MMMMMMMMMAAAAAAAAAAAAAAAAMMMMMM","MBBBBBMMBBBBBMMBBBBBMMBBBBBMMBB","BBBMAABBBBMMBBBBBMMBBBBBMMBBBB","BMMBBBBBMAAAAABMMBBBBBMMBBBBBMA","ABBBBMMBBBBBMMBBBBASSBBBBBMMBB","BBBMMBBBBBMMMMMMMMAAAAANAAAAASR"];
 const tarifarios={2026:tarifas2026,2027:tarifas};
+const originalTariffMatrix=JSON.parse(JSON.stringify(tarifarios));
+function applyPublishedTariffs(rows){
+ if(!Array.isArray(rows))throw Error('Resposta inválida de tarifários.');
+ // Recomeça sempre do tarifário base para não reter valores antigos após alterações.
+ for(const y of [2026,2027])for(const h of ['eco','jardins'])for(const m of ['CAFE','MAP','FAP'])
+   for(const [room,prices] of Object.entries(originalTariffMatrix[y][h][m]))
+     tarifarios[y][h][m][room]=prices.slice();
+ let applied=0;
+ for(const row of rows){
+  const {year,hotel,meal,room,tier,price_cents}=row;
+  if(![2026,2027].includes(year)||!['eco','jardins'].includes(hotel)||
+    !['CAFE','MAP','FAP'].includes(meal)||!Number.isInteger(tier)||tier<0||tier>3||
+    !Number.isSafeInteger(price_cents)||price_cents<=0||
+    !Array.isArray(tarifarios[year]?.[hotel]?.[meal]?.[room]))
+      throw Error('O servidor enviou um tarifário inválido.');
+  tarifarios[year][hotel][meal][room][tier]=price_cents;applied++;
+ }
+ // Recalcula o orçamento e os valores exibidos no calendário com as novas regras.
+ if(typeof document!=='undefined'&&document.getElementById('calendarDays')?.innerHTML)update();
+ return applied;
+}
+if(typeof window!=='undefined')window.lagoaTariffAPI={
+ getDefaults:()=>JSON.parse(JSON.stringify(originalTariffMatrix)),
+ getCurrent:()=>JSON.parse(JSON.stringify(tarifarios)),
+ applyPublishedTariffs
+};
+
 const calendars={2026:calendar2026,2027:calendar2027};
 const seasonNames={B:'Baixa temporada',M:'Média temporada',A:'Alta temporada',S:'Super alta temporada',N:'Natal • tarifa alta',R:'Réveillon • tarifa super alta'};
 const priceTier={B:0,M:1,A:2,S:3,N:2,R:3};

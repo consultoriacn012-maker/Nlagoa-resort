@@ -4,7 +4,8 @@
   const STORAGE_KEY="lagoa_experience_session_v1";
   const $=id=>document.getElementById(id);
   let token=sessionStorage.getItem(STORAGE_KEY)||"";
-  let currentUser=null,adminRows=[],knownOperators=[],sessionQuotes=0,toastTimer=null;
+  let currentUser=null,adminRows=[],adminActivity=[],knownOperators=[],sessionQuotes=0,toastTimer=null;
+  let simulateTimer=null,lastSimSignature='',reportTruncated=false;
   let tariffRows=[],tariffLastJson='',tariffSnapshot=null,tariffDirty=false,tariffSyncAt=0;
   const fmtMoney=c=>new Intl.NumberFormat("pt-BR",{style:"currency",currency:"BRL"}).format((Number(c)||0)/100);
   const fmtDate=d=>d?String(d).split("-").reverse().join("/"):"—";
@@ -70,7 +71,7 @@
     try{
       const result=await request("login",{user_id:id,password},"");
       token=result.token;currentUser=result.user;sessionStorage.setItem(STORAGE_KEY,token);
-      sessionQuotes=0;
+      sessionQuotes=0;lastSimSignature="";clearTimeout(simulateTimer);
       await syncTariffs();
       if(currentUser.is_admin)showAdmin(currentUser);else showOperator(currentUser);
       if(currentUser.must_change_password)toast("Senha padrão em uso. Recomenda-se alterá-la no menu Alterar senha.");
@@ -78,7 +79,7 @@
     finally{$("expLoginBtn").disabled=false;$("expLoginBtn").textContent="Entrar na plataforma";}
   }
   async function logout(){
-    const old=token;token="";currentUser=null;sessionStorage.removeItem(STORAGE_KEY);
+    const old=token;token="";currentUser=null;lastSimSignature="";clearTimeout(simulateTimer);sessionStorage.removeItem(STORAGE_KEY);
     showAuth();
     if(old)try{await request("logout",{},old);}catch(_){}
   }
@@ -91,15 +92,37 @@
       ceia_cents:q.ceiaTotal,grand_total_cents:q.netWithCeia
     };
   }
-  async function record(action){
+  async function record(action,quoteOverride=null,silent=false){
     if(!currentUser||currentUser.is_admin)return;
-    const quote=(typeof state!=="undefined"&&state.quote)||null;
-    if(!quote){if(action==="simulate")toast("Preencha a simulação para registrar um orçamento.",true);return;}
+    const quote=quoteOverride||(typeof state!=="undefined"&&state.quote)||null;
+    if(!quote){if(action==="simulate"&&!silent)toast("Preencha a simulação para registrar um orçamento.",true);return;}
     try{
       const reply=await request("record",{event_type:action,quote:quoteData(quote)});
       if(reply.created){sessionQuotes++;$("expSessionCount").textContent="Orçamentos nesta sessão: "+sessionQuotes;}
-      toast(reply.created?"Orçamento registrado para "+currentUser.display_name+".":"Orçamento já contabilizado. Ação registrada.");
-    }catch(err){toast("Ação realizada, mas o registro não foi salvo: "+err.message,true);}
+      if(!silent)toast(reply.created?"Novo orçamento contabilizado.":"Ação registrada, sem duplicar o orçamento.");
+    }catch(err){toast("O registro de produtividade não foi salvo: "+err.message,true);}
+  }
+  function quoteFingerprint(quote){
+    return JSON.stringify(quoteData(quote));
+  }
+  function queueSimulation(quote){
+    clearTimeout(simulateTimer);
+    if(!currentUser||currentUser.is_admin||!quote)return;
+    const signature=quoteFingerprint(quote);
+    if(signature===lastSimSignature)return;
+    simulateTimer=setTimeout(()=>{
+      if(!currentUser||currentUser.is_admin||
+         !state.quote||quoteFingerprint(state.quote)!==signature)return;
+      lastSimSignature=signature;
+      record("simulate",quote,true);
+    },1400);
+  }
+  function completedAction(type,quote){
+    if(!currentUser||currentUser.is_admin||!quote)return;
+    // A cópia ou PDF já prova que o orçamento foi gerado.
+    clearTimeout(simulateTimer);
+    lastSimSignature=quoteFingerprint(quote);
+    record(type,quote,true);
   }
   function setKpi(id,value){$(id).textContent=value;}
   function rowData(r){
@@ -121,45 +144,71 @@
     }
     return [...map.values()];
   }
-  function bars(target,records,labels){
-    const root=$(target);if(!records.length){root.innerHTML='<p class="exp-muted">Nenhum orçamento no período selecionado.</p>';return;}
-    const highest=Math.max(1,...records.map(r=>r.count));
-    root.innerHTML=records.map(r=>'<div class="exp-bar-row"><span title="'+escapeHtml(labels(r))+'">'+
-      escapeHtml(labels(r).length>20?labels(r).slice(0,18)+"…":labels(r))+'</span><span class="exp-bar-track"><span class="exp-bar-fill" style="display:block;width:'+
-      (Math.max(4,100*r.count/highest)).toFixed(1)+'%"></span></span><b>'+r.count+'</b></div>').join("");
+  function activityGroups(records,keyFn){
+    const out=new Map();
+    for(const r of records){
+      const key=keyFn(r);
+      let entry=out.get(key);
+      if(!entry){entry={key,simulations:0,copies:0,pdfs:0};out.set(key,entry);}
+      entry.simulations+=r.simulations;entry.copies+=r.copies;entry.pdfs+=r.pdfs;
+    }
+    return [...out.values()];
   }
-  function renderDashboard(rows){
+  function bars(target,records,labels,metric){
+    const root=$(target);
+    const filtered=records.filter(r=>r[metric]>0);
+    if(!filtered.length){root.innerHTML='<p class="exp-muted">Nenhum registro desta atividade no período.</p>';return;}
+    const highest=Math.max(1,...filtered.map(r=>r[metric]));
+    root.innerHTML=filtered.map(r=>'<div class="exp-bar-row"><span title="'+escapeHtml(labels(r))+'">'+
+      escapeHtml(labels(r).length>20?labels(r).slice(0,18)+"…":labels(r))+'</span><span class="exp-bar-track"><span class="exp-bar-fill" style="display:block;width:'+
+      (Math.max(4,100*r[metric]/highest)).toFixed(1)+'%"></span></span><b>'+r[metric]+'</b></div>').join("");
+  }
+  function renderDashboard(rows,activity=[],truncated=false){
     adminRows=rows.map(rowData);
-    const total=adminRows.reduce((s,r)=>s+Number(r.total),0);
-    const actions=adminRows.reduce((v,r)=>{
-      v.copies+=r.copies;v.pdfs+=r.pdfs;v.simulations+=r.simulations;return v;
-    },{copies:0,pdfs:0,simulations:0});
+    adminActivity=activity.map(a=>({
+      date:a.local_date,operator:a.operator_name||"Operador desconhecido",operator_id:a.user_id,
+      simulations:Number(a.simulations)||0,copies:Number(a.copies)||0,pdfs:Number(a.pdfs)||0
+    }));
+    reportTruncated=!!truncated;
+    const total=adminRows.reduce((sum,r)=>sum+(Number(r.total)||0),0);
+    const sum=adminActivity.reduce((v,r)=>{
+      v.simulations+=r.simulations;v.copies+=r.copies;v.pdfs+=r.pdfs;return v;
+    },{simulations:0,copies:0,pdfs:0});
     setKpi("expKpiQuotes",adminRows.length.toLocaleString("pt-BR"));
     setKpi("expKpiValue",fmtMoney(total));
-    setKpi("expKpiSimulations",actions.simulations.toLocaleString("pt-BR"));
-    setKpi("expKpiCopies",actions.copies.toLocaleString("pt-BR"));
-    setKpi("expKpiPdf",actions.pdfs.toLocaleString("pt-BR"));
-    const perDay=aggregate(adminRows,r=>r.date).sort((a,b)=>a.key.localeCompare(b.key));
-    const perPerson=aggregate(adminRows,r=>r.operator).sort((a,b)=>b.count-a.count||a.key.localeCompare(b.key));
-    bars("expChartDaily",perDay,r=>fmtDate(r.key));
-    bars("expChartOperator",perPerson,r=>r.key);
-    const body=$("expRows");
-    body.innerHTML=adminRows.length?adminRows.map(r=>'<tr><td>'+fmtDate(r.date)+'</td><td>'+
+    setKpi("expKpiSimulations",sum.simulations.toLocaleString("pt-BR"));
+    setKpi("expKpiCopies",sum.copies.toLocaleString("pt-BR"));
+    setKpi("expKpiPdf",sum.pdfs.toLocaleString("pt-BR"));
+    const perDay=activityGroups(adminActivity,r=>r.date).sort((a,b)=>a.key.localeCompare(b.key));
+    const perPerson=activityGroups(adminActivity,r=>r.operator);
+    bars("expChartDaily",perDay,r=>fmtDate(r.key),"simulations");
+    bars("expChartCopiesDaily",perDay,r=>fmtDate(r.key),"copies");
+    bars("expChartOperator",[...perPerson].sort((a,b)=>b.simulations-a.simulations||a.key.localeCompare(b.key)),
+      r=>r.key,"simulations");
+    bars("expChartCopiesOperator",[...perPerson].sort((a,b)=>b.copies-a.copies||a.key.localeCompare(b.key)),
+      r=>r.key,"copies");
+    $("expActivityRows").innerHTML=adminActivity.length?
+      adminActivity.map(a=>'<tr><td>'+fmtDate(a.date)+'</td><td>'+escapeHtml(a.operator)+
+       '</td><td class="num">'+a.simulations+'</td><td class="num">'+a.copies+
+       '</td><td class="num">'+a.pdfs+'</td></tr>').join(""):
+      '<tr><td colspan="5" class="exp-loading">Nenhuma simulação ou cópia registrada no período.</td></tr>';
+    $("expRows").innerHTML=adminRows.length?adminRows.map(r=>'<tr><td>'+fmtDate(r.date)+'</td><td>'+
       escapeHtml(r.operator)+'</td><td>'+escapeHtml(r.hotel)+'</td><td>'+escapeHtml(r.period)+
       '</td><td class="num">'+r.adults+'</td><td class="num">'+r.children+'</td><td>'+escapeHtml(r.meal)+
       '</td><td class="num">'+fmtMoney(r.total)+'</td><td><span class="exp-tag">'+escapeHtml(r.source)+'</span></td>'+
-      '<td class="num">'+r.simulations+'</td><td class="num">'+r.copies+'</td><td class="num">'+r.pdfs+'</td></tr>').join("")
-      :'<tr><td colspan="12" class="exp-loading">Nenhum orçamento registrado para os filtros escolhidos.</td></tr>';
-    $("expAdminStatus").textContent=adminRows.length+' orçamento(s) no filtro · Horário de Brasília.';
-    $("expDownloadExcel").disabled=!adminRows.length;
+      '<td class="num">'+r.simulations+'</td><td class="num">'+r.copies+'</td><td class="num">'+r.pdfs+'</td></tr>').join(""):
+      '<tr><td colspan="12" class="exp-loading">Nenhum orçamento novo no período. Confira também o quadro de atividades.</td></tr>';
+    $("expAdminStatus").textContent=adminRows.length+' orçamento(s) distinto(s) · '+
+      sum.simulations+' simulação(ões) · '+sum.copies+' cópia(s) · horário de Brasília.';
+    $("expDownloadExcel").disabled=reportTruncated||(!adminRows.length&&!adminActivity.length);
   }
   async function refreshAdmin(){
     if(!currentUser?.is_admin)return;
     const date_from=$("expDateStart").value,date_to=$("expDateEnd").value,user_id=$("expAdminOperator").value||null;
     if(!date_from||!date_to||date_to<date_from){toast("Informe um período válido.",true);return;}
     $("expApplyFilters").disabled=true;$("expAdminStatus").textContent="Consultando registros...";
-    try{const result=await request("analytics",{date_from,date_to,user_id});renderDashboard(result.rows||[]);
-      if(result.truncated)toast("Relatório limitado. Reduza o período para exportar todos os registros.",true);
+    try{const result=await request("analytics",{date_from,date_to,user_id});renderDashboard(result.rows||[],result.activity||[],result.truncated);
+      if(result.truncated)toast("Relatório incompleto: reduza o período. A exportação ficará desabilitada.",true);
     }catch(err){$("expAdminStatus").textContent="Erro ao carregar os relatórios.";toast(err.message,true);}
     finally{$("expApplyFilters").disabled=false;}
   }
@@ -200,17 +249,18 @@
     out.push(...end);return new Uint8Array(out);
   }
   function exportXlsx(){
-    if(!adminRows.length){toast("Não há dados para exportar.",true);return;}
-    const byDay=aggregate(adminRows,r=>r.date+"|"+r.operator).sort((a,b)=>a.key.localeCompare(b.key));
-    const daily=[["Data","Operador","Orçamentos","Valor orçado (R$)","Simulações","Cópias","PDFs"],...byDay.map(r=>{
-      const [d,name]=r.key.split("|");return[d,name,r.count,r.total/100,r.simulations,r.copies,r.pdfs]})];
-    const byPerson=aggregate(adminRows,r=>r.operator).sort((a,b)=>b.count-a.count);
-    const perPerson=[["Operador","Orçamentos","Valor orçado (R$)","Simulações","Cópias","PDFs"],...byPerson.map(r=>[r.key,r.count,r.total/100,r.simulations,r.copies,r.pdfs])];
-    const detail=[["Data registro","Operador","Hotel","Check-in","Check-out","Noites","Adultos 13+","Crianças até 12",
-      "Regime","Meia pensão","Desconto (%)","Particular (R$)","Desconto (R$)","Ceia (R$)","Conceito total (R$)","Origem","Simulações","Cópias","PDFs"],
+    if(reportTruncated){toast("Relatório incompleto. Reduza o período para exportar todos os dados.",true);return;}
+    if(!adminRows.length&&!adminActivity.length){toast("Não há dados para exportar.",true);return;}
+    const daily=[["Data da atividade","Operador","Simulações distintas","Cópias concluídas","PDFs gerados"],
+      ...adminActivity.map(r=>[r.date,r.operator,r.simulations,r.copies,r.pdfs])];
+    const byPerson=activityGroups(adminActivity,r=>r.operator).sort((a,b)=>b.simulations-a.simulations);
+    const perPerson=[["Operador","Simulações distintas","Cópias concluídas","PDFs gerados"],
+      ...byPerson.map(r=>[r.key,r.simulations,r.copies,r.pdfs])];
+    const detail=[["Data do orçamento","Operador","Hotel","Check-in","Check-out","Noites","Adultos 13+","Crianças até 12",
+      "Regime","Meia pensão","Desconto (%)","Particular (R$)","Desconto (R$)","Ceia (R$)","Conceito total (R$)","Origem","Cliques em Simular","Cópias no período","PDFs no período"],
       ...adminRows.map(r=>[r.date,r.operator,r.hotel,r.checkin,r.checkout,r.nights,r.adults,r.children,r.meal,r.map_choice,r.discount,
         Number(r.full)/100,Number(r.discountCents)/100,Number(r.ceia)/100,Number(r.total)/100,r.source,r.simulations,r.copies,r.pdfs])];
-    const contentTypes='<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>'+
+        const contentTypes='<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>'+
       [1,2,3].map(i=>'<Override PartName="/xl/worksheets/sheet'+i+'.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>').join("")+'</Types>';
     const rels='<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>';
     const workbook='<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="Resumo por dia" sheetId="1" r:id="rId1"/><sheet name="Por operador" sheetId="2" r:id="rId2"/><sheet name="Orçamentos" sheetId="3" r:id="rId3"/></sheets></workbook>';
@@ -220,13 +270,13 @@
     const styles='<?xml version="1.0" encoding="UTF-8" standalone="yes"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><numFmts count="1"><numFmt numFmtId="164" formatCode="&quot;R$&quot; #,##0.00"/></numFmts><fonts count="2"><font><sz val="11"/><name val="Arial"/></font><font><b/><color rgb="FFFFFFFF"/><sz val="11"/><name val="Arial"/></font></fonts><fills count="3"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FF254672"/><bgColor indexed="64"/></patternFill></fill></fills><borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="3"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/><xf numFmtId="0" fontId="1" fillId="2" borderId="0" xfId="0" applyFill="1" applyFont="1"/><xf numFmtId="164" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/></cellXfs></styleSheet>';
     const files=[
       ["[Content_Types].xml",contentTypes],["_rels/.rels",rels],["xl/workbook.xml",workbook],["xl/_rels/workbook.xml.rels",wbRels],["xl/styles.xml",styles],
-      ["xl/worksheets/sheet1.xml",sheetXml(daily,[3])],["xl/worksheets/sheet2.xml",sheetXml(perPerson,[2])],["xl/worksheets/sheet3.xml",sheetXml(detail,[11,12,13,14])]
+      ["xl/worksheets/sheet1.xml",sheetXml(daily)],["xl/worksheets/sheet2.xml",sheetXml(perPerson)],["xl/worksheets/sheet3.xml",sheetXml(detail,[11,12,13,14])]
     ];
     const blob=new Blob([writeZip(files)],{type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"});
     const url=URL.createObjectURL(blob),a=document.createElement("a");
     a.href=url;a.download="Lagoa_Experience_Produtividade_"+$("expDateStart").value+"_a_"+$("expDateEnd").value+".xlsx";
     document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),60000);
-    toast("Excel gerado com resumo diário, operadores e orçamentos detalhados.");
+    toast("Excel gerado: simulações e cópias por dia, por operador e orçamentos detalhados.");
   }
 
   // Consulta a base compartilhada antes de liberar os preços do simulador.
@@ -441,9 +491,15 @@
       const n=Number(b.dataset.expPeriod);$("expDateStart").value=daysAgo(n-1);$("expDateEnd").value=today();refreshAdmin();
     }));
     // Só ações explícitas geram registros; recalcular ao digitar não conta orçamento.
-    [["refreshBtn","simulate"],["copyBtn","copy"],["pdfBtn","pdf"]].forEach(([id,type])=>{
-      $(id)?.addEventListener("click",()=>{if(currentUser&&!currentUser.is_admin)record(type);});
+    $("refreshBtn")?.addEventListener("click",()=>{
+      if(!currentUser||currentUser.is_admin||!state.quote)return;
+      clearTimeout(simulateTimer);
+      lastSimSignature=quoteFingerprint(state.quote);
+      record("simulate",state.quote,true);
     });
+    window.addEventListener("lagoa:quote-changed",event=>queueSimulation(event.detail?.quote||null));
+    window.addEventListener("lagoa:quote-copied",event=>completedAction("copy",event.detail?.quote));
+    window.addEventListener("lagoa:quote-pdf",event=>completedAction("pdf",event.detail?.quote));
     try{
       await loadPeople();
       if(token){

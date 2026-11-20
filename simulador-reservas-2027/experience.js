@@ -71,6 +71,7 @@
       token=result.token;currentUser=result.user;sessionStorage.setItem(STORAGE_KEY,token);
       sessionQuotes=0;
       if(currentUser.is_admin)showAdmin(currentUser);else showOperator(currentUser);
+      if(currentUser.must_change_password)toast("Senha padrão em uso. Recomenda-se alterá-la no menu Alterar senha.");
     }catch(err){$("expAuthError").textContent=err.message;$("expAuthError").hidden=false;}
     finally{$("expLoginBtn").disabled=false;$("expLoginBtn").textContent="Entrar na plataforma";}
   }
@@ -186,7 +187,8 @@
       const nameBytes=enc.encode(name),data=enc.encode(content),crc=crc32(data);
       const header=[];u32(header,0x04034b50);u16(header,20);u16(header,0);u16(header,0);u16(header,0);u16(header,0);
       u32(header,crc);u32(header,data.length);u32(header,data.length);u16(header,nameBytes.length);u16(header,0);
-      out.push(...header,...nameBytes,...data);
+      out.push(...header,...nameBytes);
+      for(let i=0;i<data.length;i++)out.push(data[i]);
       const cd=[];u32(cd,0x02014b50);u16(cd,20);u16(cd,20);u16(cd,0);u16(cd,0);u16(cd,0);u16(cd,0);
       u32(cd,crc);u32(cd,data.length);u32(cd,data.length);u16(cd,nameBytes.length);u16(cd,0);u16(cd,0);u16(cd,0);u16(cd,0);u32(cd,0);u32(cd,offset);
       central.push(...cd,...nameBytes);offset+=header.length+nameBytes.length+data.length;
@@ -260,6 +262,7 @@
       if(token){
         try{const me=await request("me");currentUser=me.user;
           if(currentUser.is_admin)showAdmin(currentUser);else showOperator(currentUser);
+          if(currentUser.must_change_password)toast("Senha padrão em uso. Recomenda-se alterá-la.");
         }catch{token="";sessionStorage.removeItem(STORAGE_KEY);showAuth();}
       }
       $("expLoginBtn").disabled=false;$("expLoginBtn").textContent="Entrar na plataforma";

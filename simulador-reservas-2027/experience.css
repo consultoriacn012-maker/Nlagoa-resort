@@ -67,3 +67,31 @@ body.auth-pending,body.exp-admin-mode{background:#f2f6fb}
 @media(max-width:1040px){.exp-filter-grid{grid-template-columns:repeat(3,1fr)}.exp-filter-grid button{width:100%}.exp-kpis{grid-template-columns:repeat(3,1fr)}}
 @media(max-width:730px){.exp-admin-head{align-items:flex-start;flex-direction:column}.exp-filter-grid{grid-template-columns:1fr 1fr}.exp-filter-grid .exp-field:nth-child(3){grid-column:span 2}.exp-charts{grid-template-columns:1fr}.exp-kpis{grid-template-columns:repeat(2,1fr)}.exp-toolbar{flex-wrap:wrap}.exp-toolbar .exp-toolbar-spacer{display:none}}
 @media(max-width:470px){.exp-auth-card{padding:28px 21px}.exp-admin-screen{padding:16px 10px}.exp-panel{padding:16px}.exp-filter-grid{grid-template-columns:1fr}.exp-filter-grid .exp-field:nth-child(3){grid-column:auto}.exp-kpis{gap:8px}.exp-kpi{padding:12px}.exp-kpi strong{font-size:20px}.exp-bar-row{grid-template-columns:94px minmax(40px,1fr) 30px;font-size:10px}}
+
+/* Painel de tabelas comerciais */
+.exp-admin-tabs{display:flex;align-items:center;gap:8px;border-bottom:1px solid #dbe6f0;margin-bottom:22px;overflow-x:auto}
+.exp-admin-tab{border:1px solid transparent;background:transparent;border-radius:12px 12px 0 0;color:#6281a0;font-size:13px;font-weight:800;padding:13px 21px;white-space:nowrap;cursor:pointer}
+.exp-admin-tab.active{color:#245586;background:#fff;border-color:#dbe6f0;border-bottom-color:#fff}
+.exp-admin-tab:hover{color:#245586}
+.exp-tariff-toolbar{display:flex;gap:11px;align-items:flex-end;flex-wrap:wrap;margin:17px 0}
+.exp-tariff-toolbar .exp-field{min-width:180px;margin:0;flex:0 1 240px}
+.exp-tariff-toolbar button{min-width:128px;height:42px}
+.exp-tariff-status{color:#5d7593;font-size:12px;line-height:1.5;margin:6px 0 17px;padding:10px 12px;background:#f2f7fc;border-radius:10px}
+.exp-tariff-status.error{color:#a64242;background:#fff2f2}
+.exp-tariff-editor{display:grid;gap:23px}
+.exp-tariff-section{border:1px solid #e4ebf3;border-radius:15px;overflow:hidden;background:#fff}
+.exp-tariff-section h3{margin:0;background:#eef5fb;padding:12px 15px;color:#325781;font-size:14px}
+.exp-tariff-table-wrap{overflow:auto}
+.exp-tariff-table{border-collapse:separate;border-spacing:0;width:100%;min-width:670px;font-size:12px}
+.exp-tariff-table thead{background:#f6f9fd}
+.exp-tariff-table th{font-size:11px;text-align:center;padding:12px 8px;color:#557495;border-bottom:1px solid #e2ebf3;white-space:nowrap}
+.exp-tariff-table th:first-child,.exp-tariff-table tbody th{text-align:left;padding-left:18px;min-width:138px}
+.exp-tariff-table tbody th{font-size:12px;font-weight:800;color:#385778;background:#fbfcfe}
+.exp-tariff-table td{padding:8px 9px;border-bottom:1px solid #eef2f7}
+.exp-tariff-input{width:100%;min-width:104px;height:38px;border:1px solid #d9e5f1;border-radius:9px;background:white;padding:0 10px;color:#274968;font-size:12px;font-weight:700;text-align:right;font-variant-numeric:tabular-nums}
+.exp-tariff-input:focus{outline:2px solid #b4e2ee;border-color:#35a4c3}
+.exp-tariff-input.dirty{border-color:#eab55d;background:#fff9ec}
+.exp-tariff-input.invalid{border-color:#da6a6a;background:#fff0f0}
+.exp-tariff-input:disabled{color:#aab8c5;background:#eef1f5}
+.exp-tariff-cell-note{display:block;font-size:9px;color:#9aaabe;text-align:right;margin-top:4px}
+@media(max-width:730px){.exp-tariff-toolbar .exp-field{flex:1 1 160px;min-width:140px}.exp-tariff-toolbar button{flex:1 1 120px}}

@@ -72,6 +72,11 @@
       const result=await request("login",{user_id:id,password},"");
       token=result.token;currentUser=result.user;sessionStorage.setItem(STORAGE_KEY,token);
       sessionQuotes=0;lastSimSignature="";clearTimeout(simulateTimer);
+      // Ao trocar de colaborador, a cotação do usuário anterior não pode ser atribuída ao próximo.
+      if(!currentUser.is_admin){
+        const reset=$("resetBtn");
+        if(reset&&typeof reset.click==="function")reset.click();
+      }
       await syncTariffs();
       if(currentUser.is_admin)showAdmin(currentUser);else showOperator(currentUser);
       if(currentUser.must_change_password)toast("Senha padrão em uso. Recomenda-se alterá-la no menu Alterar senha.");
@@ -80,6 +85,8 @@
   }
   async function logout(){
     const old=token;token="";currentUser=null;lastSimSignature="";clearTimeout(simulateTimer);sessionStorage.removeItem(STORAGE_KEY);
+    const reset=$("resetBtn");
+    if(reset&&typeof reset.click==="function")reset.click();
     showAuth();
     if(old)try{await request("logout",{},old);}catch(_){}
   }

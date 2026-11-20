@@ -147,8 +147,12 @@ Deno.serve(async(req:Request)=>{
     }
     const u=await userFromToken(req);
     if(!u)return respond({ok:false,error:"Sessão expirada ou acesso não autorizado. Entre novamente."},401,origin);
-    if(action==="me")return respond({ok:true,user:{id:u.id,display_name:u.display_name,
-      is_admin:u.is_admin,must_change_password:u.must_change_password}},200,origin);
+    if(action==="me"){
+      const sessionQuotes=u.is_admin?[]:await db("experience_quotes?session_hash=eq."+u.session_hash+"&select=id&limit=10000");
+      return respond({ok:true,user:{id:u.id,display_name:u.display_name,
+        is_admin:u.is_admin,must_change_password:u.must_change_password},
+        session_quotes:sessionQuotes.length},200,origin);
+    }
     if(action==="logout"){
       await db("experience_sessions?token_hash=eq."+u.session_hash,"PATCH",{revoked_at:new Date().toISOString()});
       return respond({ok:true},200,origin);

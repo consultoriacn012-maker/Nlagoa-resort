@@ -155,6 +155,35 @@ Deno.serve(async(req:Request)=>{
     }
     const u=await userFromToken(req);
     if(!u)return respond({ok:false,error:"Sessão expirada ou acesso não autorizado. Entre novamente."},401,origin);
+    if(action==="tariffs"){
+      const rows=await db("experience_tariff_overrides?select=year,hotel,meal,room,tier,price_cents,updated_at&order=year.asc,hotel.asc,meal.asc,room.asc,tier.asc");
+      return respond({ok:true,rows},200,origin);
+    }
+    if(action==="tariffs_history"){
+      if(!u.is_admin)return respond({ok:false,error:"Acesso exclusivo do administrador."},403,origin);
+      const rows=await db("experience_tariff_changes?select=id,changed_at,changed_by,year,hotel,meal,room,tier,previous_override_cents,price_cents&order=changed_at.desc&limit=120");
+      const people=await db("experience_users?select=id,display_name");
+      const names=new Map(people.map((p:any)=>[p.id,p.display_name]));
+      return respond({ok:true,rows:rows.map((r:any)=>({...r,operator_name:names.get(r.changed_by)||"Administrador"}))},200,origin);
+    }
+    if(action==="tariffs_save"){
+      if(!u.is_admin)return respond({ok:false,error:"Somente o administrador pode atualizar preços."},403,origin);
+      if(!Array.isArray(body.changes)||body.changes.length<1||body.changes.length>100)
+        return respond({ok:false,error:"Selecione de 1 a 100 preços para atualizar."},400,origin);
+      const changes=body.changes.map((raw:any)=>{
+        if(!raw||typeof raw!=="object"||!Number.isInteger(raw.year)||!Number.isInteger(raw.tier)||
+           !Number.isSafeInteger(raw.price_cents)||raw.price_cents<1||raw.price_cents>100000000||
+           !["eco","jardins"].includes(raw.hotel)||!["CAFE","MAP","FAP"].includes(raw.meal)||
+           !["DBL","TPL","QDL","QTL","ADC","CHD"].includes(raw.room))
+             throw new Error("Há valores de tarifário inválidos.");
+        return {year:raw.year,hotel:raw.hotel,meal:raw.meal,room:raw.room,
+                tier:raw.tier,price_cents:raw.price_cents};
+      });
+      const result=await db("rpc/experience_save_tariffs","POST",
+         {p_admin_id:u.id,p_changes:changes});
+      const updated=Number(result?.updated)||0;
+      return respond({ok:true,updated},200,origin);
+    }
     if(action==="me"){
       const sessionQuotes=u.is_admin?[]:await db("experience_quotes?session_hash=eq."+u.session_hash+"&select=id&limit=10000");
       return respond({ok:true,user:{id:u.id,display_name:u.display_name,

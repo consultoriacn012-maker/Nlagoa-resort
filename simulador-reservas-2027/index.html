@@ -507,6 +507,10 @@ function syncCeiaDisplay(){
  }
  return events;
 }
+function publishQuoteEvent(eventName,quote){
+ if(typeof window==='undefined'||typeof window.dispatchEvent!=='function'||typeof CustomEvent==='undefined')return;
+ window.dispatchEvent(new CustomEvent(eventName,{detail:{quote:quote||null}}));
+}
 function renderResults(quote){
  state.quote=quote;$('#error').classList.add('hidden');$('#copyBtn').disabled=false;$('#pdfBtn').disabled=false;
  const nights=quote.days.length,days=Math.max(0,nights-1),installments=installmentPlan(quote.netWithCeia);
@@ -549,6 +553,7 @@ function renderResults(quote){
   const other=quoteFor(otherHotel,quote.meal,quote.guests,quote.start,quote.end,quote.discount,quote.adults,quote.childrenUnder12,quote.mapChoice,quote.children712,quote.children12,quote.orderedChildAges);
   $('#otherHotelValue').textContent=money(other.netWithCeia)+(other.ceiaTotal?' (com ceia)':'');
  }catch(err){$('#otherHotelValue').textContent='Tarifa não publicada para este período';}
+ publishQuoteEvent('lagoa:quote-changed',quote);
 }
 function emptyResult(message='Preencha os dados e selecione as datas para simular',error=''){
  state.quote=null;
@@ -570,6 +575,7 @@ function emptyResult(message='Preencha os dados e selecione as datas para simula
  $('#otherHotelName').textContent='—';$('#otherHotelValue').textContent='—';$('#otherHotelBtn').dataset.hotel='';
  $('#quotePreview').textContent='O orçamento ficará disponível quando os dados da hospedagem estiverem preenchidos.';
  $('#copyBtn').disabled=true;$('#pdfBtn').disabled=true;
+ publishQuoteEvent('lagoa:quote-changed',null);
 }
 function update(){
  syncCeiaDisplay();
@@ -865,10 +871,31 @@ function downloadQuotePDF(){
   anchor.href=objectUrl;anchor.download=quotePdfFilename(state.quote);
   document.body.appendChild(anchor);anchor.click();anchor.remove();
   setTimeout(()=>URL.revokeObjectURL(objectUrl),60000);
+  publishQuoteEvent('lagoa:quote-pdf',state.quote);
  }catch(err){alert('Não foi possível gerar o PDF do orçamento: '+err.message);}
 }
 
-async function copyQuote(){if(!state.quote)return;try{await navigator.clipboard.writeText(quoteText(state.quote));const b=$('#copyBtn'),orig=b.textContent;b.textContent='✓ Copiado!';setTimeout(()=>b.textContent=orig,1800);}catch{const ta=document.createElement('textarea');ta.value=quoteText(state.quote);document.body.appendChild(ta);ta.select();document.execCommand('copy');ta.remove();$('#copyBtn').textContent='✓ Copiado!';setTimeout(()=>$('#copyBtn').textContent='Copiar orçamento',1600);}}
+async function copyQuote(){
+ if(!state.quote)return;
+ const copiedQuote=state.quote,text=quoteText(copiedQuote);
+ try{
+  await navigator.clipboard.writeText(text);
+ }catch(primaryError){
+  try{
+   const ta=document.createElement('textarea');
+   ta.value=text;document.body.appendChild(ta);ta.select();
+   const success=document.execCommand('copy');ta.remove();
+   if(!success)throw Error('Cópia não confirmada.');
+  }catch(fallbackError){
+   if(typeof alert==='function')alert('Não foi possível copiar o orçamento. Tente novamente.');
+   return;
+  }
+ }
+ const btn=$('#copyBtn'),label=btn.textContent;
+ btn.textContent='✓ Copiado!';
+ setTimeout(()=>btn.textContent=label,1800);
+ publishQuoteEvent('lagoa:quote-copied',copiedQuote);
+}
 function clear(){
  $('#checkin').value='';$('#checkout').value='';
  $('#meal').value='CAFE';$('#mapChoice').value='';

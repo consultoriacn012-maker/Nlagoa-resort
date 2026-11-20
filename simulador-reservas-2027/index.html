@@ -578,36 +578,31 @@ function emptyResult(message='Preencha os dados e selecione as datas para simula
  setCeiaVisible('ceiaResult',false);
  $('#seasonSummary').innerHTML='';$('#rows').innerHTML='';
  $('#otherHotelName').textContent='—';$('#otherHotelValue').textContent='—';$('#otherHotelBtn').dataset.hotel='';
- $('#quotePreview').textContent='O orçamento ficará disponível quando os dados da hospedagem estiverem preenchidos.';
+ $('#quotePreview').textContent='Preencha a hospedagem e clique em Simular reserva para gerar o orçamento.';
  $('#copyBtn').disabled=true;$('#pdfBtn').disabled=true;
  publishQuoteEvent('lagoa:quote-changed',null);
 }
+// Alterações no formulário só atualizam datas, seleção e avisos. Nunca geram
+// valores de orçamento nem registram produtividade antes do clique em Simular.
 function update(){
  syncCeiaDisplay();
- const hasDates=!!$('#checkin').value&&!!$('#checkout').value;
- const hasAdults=$('#adults').value.trim()!=='';
- const requestedChildren=$('#childrenTotal').value===''?0:Number($('#childrenTotal').value);
- if(!hasDates||!hasAdults){
-  emptyResult('Selecione o check-in, o check-out e informe os adultos');
-  renderCalendar();
-  return;
- }
- if(Number.isInteger(requestedChildren)&&requestedChildren>0&&requestedChildren<=29&&
-    (childAges.length!==requestedChildren||childAges.some(age=>!age))){
-  emptyResult('Informe a idade de cada criança para calcular o orçamento');
-  renderCalendar();return;
- }
- if($('#meal').value==='MAP'&&!$('#mapChoice').value){
-  emptyResult('Escolha café + almoço ou café + jantar para calcular a meia pensão');
-  renderCalendar();return;
- }
+ emptyResult('Preencha os dados e clique em "Simular reserva" para visualizar os valores.');
+ renderCalendar();
+}
+// O único ponto da interface que calcula, apresenta e registra uma simulação.
+function simulateQuote(){
+ syncCeiaDisplay();
  try{
   const form=readForm();
-  renderResults(quoteFor(form.hotel,form.meal,form.guests,form.start,form.end,form.discount,form.adults,form.children,form.mapChoice,form.children712,form.children12,form.orderedChildAges));
+  const quote=quoteFor(form.hotel,form.meal,form.guests,form.start,form.end,form.discount,
+   form.adults,form.children,form.mapChoice,form.children712,form.children12,form.orderedChildAges);
+  renderResults(quote);
+  renderCalendar();
+  publishQuoteEvent('lagoa:quote-simulated',quote);
  }catch(e){
-  emptyResult('Revise os dados para calcular o orçamento',e.message);
+  emptyResult('Revise os dados e clique em "Simular reserva".',e.message);
+  renderCalendar();
  }
- renderCalendar();
 }
 function setHotel(hotel){state.hotel=hotel;document.querySelectorAll('.hotel-option').forEach(el=>{let active=el.dataset.hotel===hotel;el.classList.toggle('active',active);el.setAttribute('aria-pressed',String(active));});updateMapChoice();update();}
 const months=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
@@ -634,13 +629,13 @@ function calendarDayRate(context,season){
  return dailyRate(context.hotel,context.meal,context.payingGuests,season,context.year,context.paidChildren712);
 }
 function renderCalendar(){
- const m=state.month,y=state.year,yearCalendar=calendars[y],context=calendarRateContext();
+ const m=state.month,y=state.year,yearCalendar=calendars[y],context=state.quote?calendarRateContext():null;
  $('#monthName').textContent=months[m]+' de '+y;
  $('#calendarPriceGuide').textContent=context
   ?'Diárias em R$ para '+context.adults+' adulto(s)'+(context.childrenCount?' e '+context.childrenCount+' criança(s)':'')+
    ' · '+hotNames[context.hotel]+' · '+(context.meal==='CAFE'?'Café da manhã':context.meal==='MAP'?'Meia pensão (MAP)':'Pensão completa (FAP)')+
    ' · tarifa antes do desconto.'
-  :'Informe os adultos e, se houver crianças, suas idades para visualizar o valor de cada diária.';
+  :'Os preços por diária aparecem após clicar em Simular reserva com os dados completos.';
  const firstDay=(new Date(Date.UTC(y,m,1)).getUTCDay()+6)%7,n=new Date(Date.UTC(y,m+1,0)).getUTCDate();
  let html=['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'].map(t=>'<div class="weekday">'+t+'</div>').join('')+'<div></div>'.repeat(firstDay);
  const start=$('#checkin').value,end=$('#checkout').value;
@@ -651,7 +646,7 @@ function renderCalendar(){
   try{rate=calendarDayRate(context,season);}catch(e){rate=-1;}
   const price=rate===null?'—':rate<0?'Indisp.':money(rate).replace(/^R\$\s*/,'');
   const priceClass=rate===null?' empty':rate<0?' unavailable':'';
-  const priceFull=rate===null?'preencha os hóspedes':rate<0?'tarifa não encontrada':'diária '+money(rate);
+  const priceFull=rate===null?'clique em Simular reserva para ver os valores':rate<0?'tarifa não encontrada':'diária '+money(rate);
   html+='<button type="button" class="day '+(selected?'selected':'')+' '+(between?'between':'')+
    '" data-day="'+date+'" aria-label="'+d+' de '+months[m]+': '+seasonNames[season]+', '+priceFull+
    '" title="'+seasonNames[season]+' · '+priceFull+'"><b>'+d+'</b><small class="day-price'+priceClass+
@@ -927,7 +922,7 @@ function init(){
  $('#copyBtn').addEventListener('click',copyQuote);
  $('#pdfBtn').addEventListener('click',downloadQuotePDF);
  $('#otherHotelBtn').addEventListener('click',()=>setHotel($('#otherHotelBtn').dataset.hotel));
- $('#refreshBtn').addEventListener('click',update);
+ $('#refreshBtn').addEventListener('click',simulateQuote);
  $('#childrenTotal').addEventListener('input',()=>{syncChildAges();update();});
  for(const [button,change] of [['#childrenMinus',-1],['#childrenPlus',1]]){
   $(button).addEventListener('click',()=>{

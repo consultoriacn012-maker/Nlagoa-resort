@@ -244,7 +244,7 @@ Deno.serve(async(req:Request)=>{
       const records=await fetchAll("experience_quotes?"+filter+
         "&select=id,user_id,local_date,created_at,hotel,year,checkin,checkout,nights,adults,children,children_ages,meal,map_choice,discount_pct,total_cents,discount_cents,net_cents,ceia_cents,grand_total_cents,source_action&order=created_at.desc",30000);
       const actions=await fetchAll("experience_actions?"+filter+
-        "&select=quote_id,event_type&order=created_at.desc",50000);
+        "&select=quote_id,user_id,local_date,event_type,created_at&order=created_at.desc",50000);
       const people=await db("experience_users?select=id,display_name,is_admin");
       const peopleMap=new Map(people.map((o:any)=>[o.id,o.display_name]));
       const actionsByQuote=new Map<string,{simulations:number,copies:number,pdfs:number}>();
@@ -259,7 +259,30 @@ Deno.serve(async(req:Request)=>{
         ...q,operator_name:peopleMap.get(q.user_id)||"Operador desconhecido",
         ...(actionsByQuote.get(q.id)||{simulations:0,copies:0,pdfs:0})
       }));
-      return respond({ok:true,rows,truncated:records.truncated||actions.truncated},200,origin);
+      // Métricas independentes por data da ação (não pela data da cotação).
+      // Simulações: novos orçamentos distintos, inclusive os inicialmente copiados.
+      // Cópias: cada ação de copiar registrada.
+      const byDay=new Map<string,{local_date:string,user_id:string,operator_name:string,simulations:number,copies:number,pdfs:number,simulate_clicks:number}>();
+      function bucket(date:string,uid:string){
+        const key=date+"|"+uid;
+        let item=byDay.get(key);
+        if(!item){
+          item={local_date:date,user_id:uid,operator_name:peopleMap.get(uid)||"Operador desconhecido",
+            simulations:0,copies:0,pdfs:0,simulate_clicks:0};
+          byDay.set(key,item);
+        }
+        return item;
+      }
+      for(const quote of records.items)bucket(quote.local_date,quote.user_id).simulations++;
+      for(const act of actions.items){
+        const b=bucket(act.local_date,act.user_id);
+        if(act.event_type==="copy")b.copies++;
+        else if(act.event_type==="pdf")b.pdfs++;
+        else if(act.event_type==="simulate")b.simulate_clicks++;
+      }
+      const activity=[...byDay.values()].sort((a,b)=>
+        a.local_date.localeCompare(b.local_date)||a.operator_name.localeCompare(b.operator_name));
+      return respond({ok:true,rows,activity,truncated:records.truncated||actions.truncated},200,origin);
     }
     return respond({ok:false,error:"Ação desconhecida."},400,origin);
   }catch(err){
